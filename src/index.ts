@@ -1,5 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import cors from 'cors';
 import usersRouter from './routes/users.routes';
 import databaseService from '~/services/database.services';
 import { defaultErrorHandler } from './middlewares/errors.middlewares';
@@ -14,6 +15,14 @@ const options = argv(process.argv.slice(2))
 console.log(options);
 const app = express();
 const port = process.env.PORT || 4000;
+
+// Middleware CORS
+app.use(cors({
+  origin: (origin, callback) => {
+    // Cho phép tất cả các origin
+    callback(null, true);
+  },
+}));
 
 //tao folder uploads
 
