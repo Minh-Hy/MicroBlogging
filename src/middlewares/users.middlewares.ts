@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { hashPassword } from '~/utils/crypto';
 import { checkSchema, ParamSchema } from "express-validator"
 import { validate } from "~/utils/validation"
@@ -206,7 +207,7 @@ export const registerValidator = validate(
         options: async (value) => {
           const result = await usersService.checkEmailExist(value);
           if (result) {
-            throw new Error(USERS_MESSAGES.EMAIL_ALREADT_EXISTS);
+            throw new Error(USERS_MESSAGES.EMAIL_ALREADY_EXISTS);
           }
           return true;
         }

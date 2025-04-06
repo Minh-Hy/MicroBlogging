@@ -10,6 +10,11 @@ import { ObjectId } from 'mongodb';
 import { config } from "dotenv"
 import { USERS_MESSAGES } from "~/constants/messages"
 import Follower from "~/models/schemas/Followers.schemas"
+import ms from 'ms'
+import axios from "axios"
+import { ErrorWithStatus } from "~/models/Errors"
+import HTTP_STATUS from "~/constants/httpStatus"
+
 config()
 
 
@@ -23,7 +28,7 @@ class UsersService {
       }, 
       privateKey: process.env.JWT_SECRET_ACCESS_TOKEN as string,
       options : {
-        expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN
+        expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN as ms.StringValue
       }
     })
   }
@@ -36,7 +41,7 @@ class UsersService {
       },
       privateKey: process.env.JWT_SECRET_REFRESH_TOKEN as string,
       options : {
-        expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN
+        expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN as ms.StringValue
       }
     })
   }
@@ -50,7 +55,7 @@ class UsersService {
       },
       privateKey: process.env.JWT_SECRET_EMAIL_VERIFY_TOKEN as string,
       options : {
-        expiresIn: process.env.EMAIL_VERIFY_TOKEN_EXPIRES_IN
+        expiresIn: process.env.EMAIL_VERIFY_TOKEN_EXPIRES_IN as ms.StringValue
       }
     })
   }
@@ -64,7 +69,7 @@ class UsersService {
       },
       privateKey: process.env.JWT_SECRET_FORGOT_PASSWORD_TOKEN as string,
       options : {
-        expiresIn: process.env.FORGOT_PASSWORD_TOKEN_EXPIRES_IN
+        expiresIn: process.env.FORGOT_PASSWORD_TOKEN_EXPIRES_IN as ms.StringValue
       }
     })
   }
@@ -112,6 +117,87 @@ class UsersService {
     }
   }
 
+  private async getOauthGooglToken (code : string) {
+    const body = {
+      code, 
+      client_id : process.env.GOOGLE_CLIENT_ID,
+      client_secret : process.env.GOOGLE_CLIENT_SECRET,
+      redirect_uri : process.env.GOOGLE_REDIRECT_URI,
+      grant_type : 'authorization_code'
+    }
+    const {data} = await axios.post('https://oauth2.googleapis.com/token', body, {
+      headers: {
+      'Content-Type' : 'application/x-www-form-urlencoded'
+      }
+    }) 
+    return data as {
+      access_token : string,
+      id_token : string
+    }
+  }
+  
+  private async getGoogleUserInfo (access_token: string, id_token: string) {
+    const {data} = await axios.get('https://www.googleapis.com/oauth2/v1/userinfo', {
+      params : {
+        access_token,
+        alt : 'json'
+      },
+      headers : {
+        Authorization : `Bearer ${id_token}`
+      }
+    } )
+
+    return data as {
+      id: string,
+      email: string,
+      verified_email: boolean,
+      name: string,
+      given_name: string,
+      family_name: string,
+      picture: string,
+      locale: string
+    }
+  }
+  async oauth(code : string) {
+    const{access_token, id_token}  = await this.getOauthGooglToken(code)
+    const userInfo = await this.getGoogleUserInfo(access_token, id_token)
+    if(!userInfo.verified_email) {
+      throw new ErrorWithStatus({
+        message: USERS_MESSAGES.GMAIL_NOT_VERIFIED,
+        status: HTTP_STATUS.BAD_REQUEST
+      })
+    }
+    // kiem tra email da duoc dang ki hay chua
+    const user = await databaseService.users.findOne({email: userInfo.email})
+    //Neu ton tai thi login
+    if(user) {
+      const [access_token, refresh_token] = await this.signAccessAndRefreshToken({
+        user_id : user._id.toString(),
+        verify: user.verify
+      })
+      await databaseService.RefreshTokens.insertOne(
+        new RefreshToken({user_id : user._id, token: refresh_token}))
+        return {
+          access_token,
+          refresh_token,
+          newUser: 0,
+          verify : user.verify  
+        }
+    } else {
+      //khong thi tao moi
+      //random password
+      const password = Math.random().toString(36).slice(-8)
+      const data = await this.register({
+        email: userInfo.email,
+        name: userInfo.name,
+        date_of_birth: new Date().toISOString(),
+        password,
+        confirm_password: password
+      })
+      return {...data, newUser: 1, verify: UserVerifyStatus.Unverified}
+    }
+  }
+
   async logout(refresh_token : string) {
     await databaseService.RefreshTokens.deleteOne({token: refresh_token})
     return {message: USERS_MESSAGES.LOGOUT_SUCCESS}
@@ -131,6 +217,7 @@ class UsersService {
       }])
     ])
     const [access_token, refresh_token] = token
+    await databaseService.RefreshTokens.insertOne(new RefreshToken({user_id: new ObjectId(user_id), token: refresh_token}))
     return {
       access_token,
       refresh_token

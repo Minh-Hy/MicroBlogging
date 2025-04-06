@@ -1,13 +1,25 @@
 import { accessTokenValidator, changePasswordValidator, emailVerifyTokenValidator, followValidator, forgotPasswordValidator, RefreshTokenValidator, registerValidator, resetPassWordValidator, unFollowValidator, updateMeValidator, verifiedUserValidator, verifyForgotPasswordTokenValidator } from './../middlewares/users.middlewares';
 import { Router } from "express"
 import { loginValidator } from "~/middlewares/users.middlewares"
-import { verifyEmailController, loginController, logoutController, registerController, resendVerifyEmailController, forgotPasswordController, verifyForgotPasswordController, resetPasswordController, updateMeController, followController, unFollowController, changePasswordController, getProfileController } from "~/controller/users.controllers"
+import { verifyEmailController, loginController, logoutController, registerController, resendVerifyEmailController, forgotPasswordController, verifyForgotPasswordController, resetPasswordController, updateMeController, followController, unFollowController, changePasswordController, getProfileController, oauthController } from "~/controller/users.controllers"
 import { wrapRequestHandler } from '~/utils/handlers';
 import { filterMiddlewares } from '~/middlewares/common.middlewares';
 import { UpdateMeReqBody } from '~/models/requests/user.requests';
 const usersRouter = Router()
-
-usersRouter.post('/login', loginValidator, loginController)
+/**
+ * Descript  : Login user
+ * Path : /login
+ * Method : POST
+ * Body : {email : string, password : string}
+ */
+usersRouter.post('/login', loginValidator, wrapRequestHandler(loginController))
+/**
+ * Descript  : Login user
+ * Path : /oauth/google
+ * Method : GET
+ * Body : {email : string, password : string}
+ */
+usersRouter.get('/oauth/google', wrapRequestHandler(oauthController))
 /**
  * Descript  : Register new user
  * Path : /register

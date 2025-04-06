@@ -3,7 +3,7 @@ export const USERS_MESSAGES = {
   NAME_IS_REQUIRED: 'Name is required',
   NAME_LENGTH_MUST_BE_FROM_1_TO_100: 'Name length must be from 1 to 100',
   NAME_MUST_BE_A_STRING: 'Name must be a string',
-  EMAIL_ALREADT_EXISTS: 'Email alreadt exist',
+  EMAIL_ALREADY_EXISTS: 'Email already exist',
   EMAIL_IS_REQUIRED: 'Email is required',
   EMAIL_IS_INVALID: 'Email is invalid',
   PASSWORD_IS_REQUIRED: 'Password is required',
@@ -58,5 +58,6 @@ export const USERS_MESSAGES = {
   OLD_PASSWORD_MUST_BE_A_STRING: 'Old password must be a string',
   OLD_PASSWORD_IS_INCORRECT: 'Old password is incorrect',
   CHANGE_PASSWORD_SUCCESS: 'Change password success',
-
+  GMAIL_NOT_VERIFIED: 'Gmail not verified',
+  UPLOAD_SUCCESS: 'Upload success',
 } as const
