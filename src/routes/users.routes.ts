@@ -1,7 +1,7 @@
 import { accessTokenValidator, changePasswordValidator, emailVerifyTokenValidator, followValidator, forgotPasswordValidator, RefreshTokenValidator, registerValidator, resetPassWordValidator, unFollowValidator, updateMeValidator, verifiedUserValidator, verifyForgotPasswordTokenValidator } from './../middlewares/users.middlewares';
 import { Router } from "express"
 import { loginValidator } from "~/middlewares/users.middlewares"
-import { verifyEmailController, loginController, logoutController, registerController, resendVerifyEmailController, forgotPasswordController, verifyForgotPasswordController, resetPasswordController, updateMeController, followController, unFollowController, changePasswordController, getProfileController, oauthController } from "~/controller/users.controllers"
+import { verifyEmailController, loginController, logoutController, registerController, resendVerifyEmailController, forgotPasswordController, verifyForgotPasswordController, resetPasswordController, updateMeController, followController, unFollowController, changePasswordController, getProfileController, oauthController, refreshTokenController } from "~/controller/users.controllers"
 import { wrapRequestHandler } from '~/utils/handlers';
 import { filterMiddlewares } from '~/middlewares/common.middlewares';
 import { UpdateMeReqBody } from '~/models/requests/user.requests';
@@ -35,6 +35,13 @@ usersRouter.post('/register',registerValidator, wrapRequestHandler(registerContr
  * Body : {refresh_token : string}
  */
 usersRouter.post('/logout',accessTokenValidator, RefreshTokenValidator, wrapRequestHandler(logoutController))
+/**
+ * Descript  : Refresh token
+ * Path : /refresh-token
+ * Method : POST
+ * Body : {refresh_token : string}
+ */
+usersRouter.post('/refresh-token', RefreshTokenValidator, wrapRequestHandler(refreshTokenController))
 /**
  * Descript  : verify email when user click on the link in email
  * Path : /verify-email

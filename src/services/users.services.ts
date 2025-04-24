@@ -19,102 +19,183 @@ config()
 
 
 class UsersService {
-  private signAccessToken ({user_id, verify}: {user_id: string, verify: UserVerifyStatus }) {
+  private signAccessToken({
+    user_id,
+    verify,
+    role // Thêm trường role
+  }: {
+    user_id: string;
+    verify: UserVerifyStatus;
+    role: "admin" | "user"; // Thêm kiểu dữ liệu cho role
+  }) {
     return signToken({
       payload: {
         user_id,
         token_type: TokenType.AccessToken,
-        verify
-      }, 
+        verify,
+        role // Thêm role vào payload
+      },
       privateKey: process.env.JWT_SECRET_ACCESS_TOKEN as string,
-      options : {
+      options: {
         expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN as ms.StringValue
       }
-    })
+    });
   }
-  private signRefreshToken ({user_id, verify}: {user_id: string, verify: UserVerifyStatus }) {
+  private signRefreshToken({
+    user_id,
+    verify,
+    role // Thêm trường role
+  }: {
+    user_id: string;
+    verify: UserVerifyStatus;
+    role: "admin" | "user"; // Thêm kiểu dữ liệu cho role
+  }) {
     return signToken({
       payload: {
         user_id,
         token_type: TokenType.RefreshToken,
-        verify
+        verify,
+        role // Thêm role vào payload
       },
       privateKey: process.env.JWT_SECRET_REFRESH_TOKEN as string,
-      options : {
+      options: {
         expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN as ms.StringValue
       }
-    })
+    });
   }
 
-  private signEmailVerifyToken ({user_id, verify}: {user_id: string, verify: UserVerifyStatus }) {
+  private signEmailVerifyToken({
+    user_id,
+    verify,
+    role // Thêm trường role
+  }: {
+    user_id: string;
+    verify: UserVerifyStatus;
+    role: "admin" | "user"; // Thêm kiểu dữ liệu cho role
+  }) {
     return signToken({
       payload: {
         user_id,
         token_type: TokenType.EmailVerifyToken,
-        verify
+        verify,
+        role // Thêm role vào payload
       },
       privateKey: process.env.JWT_SECRET_EMAIL_VERIFY_TOKEN as string,
-      options : {
+      options: {
         expiresIn: process.env.EMAIL_VERIFY_TOKEN_EXPIRES_IN as ms.StringValue
       }
-    })
+    });
   }
-
-  private signForgotPasswordToken ({user_id, verify}: {user_id: string, verify: UserVerifyStatus }) {
+  
+  private signForgotPasswordToken({
+    user_id,
+    verify,
+    role // Thêm trường role
+  }: {
+    user_id: string;
+    verify: UserVerifyStatus;
+    role: "admin" | "user"; // Thêm kiểu dữ liệu cho role
+  }) {
     return signToken({
       payload: {
         user_id,
         token_type: TokenType.ForgotPasswordToken,
-        verify
+        verify,
+        role // Thêm role vào payload
       },
       privateKey: process.env.JWT_SECRET_FORGOT_PASSWORD_TOKEN as string,
-      options : {
+      options: {
         expiresIn: process.env.FORGOT_PASSWORD_TOKEN_EXPIRES_IN as ms.StringValue
       }
-    })
+    });
   }
 
-  private signAccessAndRefreshToken ({user_id, verify}: {user_id: string, verify: UserVerifyStatus }) {
+  private signAccessAndRefreshToken({
+    user_id,
+    verify,
+    role // Thêm trường role
+  }: {
+    user_id: string;
+    verify: UserVerifyStatus;
+    role: "admin" | "user"; // Thêm kiểu dữ liệu cho role
+  }) {
     return Promise.all([
-      this.signAccessToken({user_id, verify}),
-      this.signRefreshToken({user_id, verify})
-    ])
+      this.signAccessToken({ user_id, verify, role }), // Truyền role vào signAccessToken
+      this.signRefreshToken({ user_id, verify, role }) // Truyền role vào signRefreshToken
+    ]);
   }
-  async register(payload : RegisterReqBody) {
-    const user_id = new ObjectId()
-    const email_verify_token = await this.signEmailVerifyToken({user_id: user_id.toString(), verify: UserVerifyStatus.Unverified})
+  async register(payload: RegisterReqBody) {
+    const user_id = new ObjectId();
+    
+    // Tạo token xác thực email
+    const email_verify_token = await this.signEmailVerifyToken({
+      user_id: user_id.toString(),
+      verify: UserVerifyStatus.Unverified,
+      role: "user" // Mặc định role là 'user'
+    });
+  
+    // Thêm tài khoản người dùng vào database
     await databaseService.users.insertOne(
       new User({
         ...payload,
         _id: user_id,
         email_verify_token,
         date_of_birth: new Date(payload.date_of_birth),
-        password: hashPassword(payload.password)
+        password: hashPassword(payload.password),
+        role: "user" // Mặc định role là 'user'
       })
-    )
-    const [access_token, refresh_token] = await this.signAccessAndRefreshToken({user_id: user_id.toString(), verify: UserVerifyStatus.Unverified})
-    await databaseService.RefreshTokens.insertOne(new RefreshToken({user_id: new ObjectId(user_id), token: refresh_token}))
-    console.log('email_verify_token: ',email_verify_token)
+    );
+  
+    // Tạo access token và refresh token
+    const [access_token, refresh_token] = await this.signAccessAndRefreshToken({
+      user_id: user_id.toString(),
+      verify: UserVerifyStatus.Unverified,
+      role: "user" // Truyền role vào token
+    });
+  
+    // Lưu refresh token vào database
+    await databaseService.RefreshTokens.insertOne(
+      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token })
+    );
+  
+    console.log('email_verify_token: ', email_verify_token);
+  
     return {
       access_token,
       refresh_token
-    }
+    };
   }
-
   async checkEmailExist(email : string) {
     const user = await databaseService.users.findOne({ email })
     return Boolean(user)
   }
-  async login ({user_id, verify} : {user_id: string, verify: UserVerifyStatus}) {
+  async login({
+    user_id,
+    verify,
+    role // Nhận role từ controller
+  }: {
+    user_id: string;
+    verify: UserVerifyStatus;
+    role: "admin" | "user"// Thêm role vào tham số
+  }) {
+    // Tạo access token và refresh token
     const [access_token, refresh_token] = await this.signAccessAndRefreshToken({
       user_id,
-      verify
-    })
-    await databaseService.RefreshTokens.insertOne(new RefreshToken({user_id: new ObjectId(user_id), token: refresh_token}))
+      verify,
+      role // Thêm role vào tham số
+    });
+  
+    // Lưu refresh token vào database
+    await databaseService.RefreshTokens.insertOne(
+      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token })
+    );
+  
+    // Trả về kết quả bao gồm role
     return {
       access_token,
-      refresh_token
-    }
+      refresh_token,
+      role // Thêm role vào kết quả
+    };
   }
 
   private async getOauthGooglToken (code : string) {
@@ -158,43 +239,51 @@ class UsersService {
       locale: string
     }
   }
-  async oauth(code : string) {
-    const{access_token, id_token}  = await this.getOauthGooglToken(code)
-    const userInfo = await this.getGoogleUserInfo(access_token, id_token)
-    if(!userInfo.verified_email) {
+  async oauth(code: string) {
+    const { access_token, id_token } = await this.getOauthGooglToken(code);
+    const userInfo = await this.getGoogleUserInfo(access_token, id_token);
+  
+    if (!userInfo.verified_email) {
       throw new ErrorWithStatus({
         message: USERS_MESSAGES.GMAIL_NOT_VERIFIED,
         status: HTTP_STATUS.BAD_REQUEST
-      })
+      });
     }
-    // kiem tra email da duoc dang ki hay chua
-    const user = await databaseService.users.findOne({email: userInfo.email})
-    //Neu ton tai thi login
-    if(user) {
+  
+    // Kiểm tra email đã được đăng ký hay chưa
+    const user = await databaseService.users.findOne({ email: userInfo.email });
+  
+    // Nếu tồn tại thì login
+    if (user) {
       const [access_token, refresh_token] = await this.signAccessAndRefreshToken({
-        user_id : user._id.toString(),
-        verify: user.verify
-      })
+        user_id: user._id.toString(),
+        verify: user.verify,
+        role: user.role // Truyền role từ tài liệu hiện tại
+      });
+  
       await databaseService.RefreshTokens.insertOne(
-        new RefreshToken({user_id : user._id, token: refresh_token}))
-        return {
-          access_token,
-          refresh_token,
-          newUser: 0,
-          verify : user.verify  
-        }
+        new RefreshToken({ user_id: user._id, token: refresh_token })
+      );
+  
+      return {
+        access_token,
+        refresh_token,
+        newUser: 0,
+        verify: user.verify
+      };
     } else {
-      //khong thi tao moi
-      //random password
-      const password = Math.random().toString(36).slice(-8)
+      // Nếu không thì tạo mới
+      const password = Math.random().toString(36).slice(-8);
       const data = await this.register({
         email: userInfo.email,
         name: userInfo.name,
         date_of_birth: new Date().toISOString(),
         password,
-        confirm_password: password
-      })
-      return {...data, newUser: 1, verify: UserVerifyStatus.Unverified}
+        confirm_password: password,
+        role: "user" // Mặc định role là 'user'
+      });
+  
+      return { ...data, newUser: 1, verify: UserVerifyStatus.Unverified };
     }
   }
 
@@ -203,50 +292,98 @@ class UsersService {
     return {message: USERS_MESSAGES.LOGOUT_SUCCESS}
   }
 
-  async verifyEmail(user_id : string) { 
+  async refreshToken({
+    user_id,
+    verify,
+    refresh_token,
+    role // Thêm role vào tham số
+  }: {
+    user_id: string;
+    verify: UserVerifyStatus;
+    refresh_token: string;
+    role: "admin" | "user"; // Thêm kiểu dữ liệu cho role
+  }) {
+    const [new_access_token, new_refresh_token] = await Promise.all([
+      this.signAccessToken({ user_id, verify, role }), // Truyền role vào signAccessToken
+      this.signRefreshToken({ user_id, verify, role }), // Truyền role vào signRefreshToken
+      databaseService.RefreshTokens.deleteOne({ token: refresh_token })
+    ]);
+  
+    return {
+      access_token: new_access_token,
+      refresh_token: new_refresh_token
+    };
+  }
+
+  async verifyEmail(user_id: string) {
+    const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) });
+  
     const [token] = await Promise.all([
-      this.signAccessAndRefreshToken({user_id, verify: UserVerifyStatus.Verified}),
-      await databaseService.users.updateOne({
-        _id: new ObjectId(user_id)
-      }, [{
-        $set: {
-          email_verify_token: '',
-          verify: 'verified',
-          updated_at: "$$NOW"
-        },
-      }])
-    ])
-    const [access_token, refresh_token] = token
-    await databaseService.RefreshTokens.insertOne(new RefreshToken({user_id: new ObjectId(user_id), token: refresh_token}))
+      this.signAccessAndRefreshToken({
+        user_id,
+        verify: UserVerifyStatus.Verified,
+        role: user?.role || "user" // Lấy role từ tài liệu hiện tại hoặc mặc định là 'user'
+      }),
+      databaseService.users.updateOne(
+        { _id: new ObjectId(user_id) },
+        [
+          {
+            $set: {
+              email_verify_token: "",
+              verify: UserVerifyStatus.Verified,
+              updated_at: "$$NOW"
+            }
+          }
+        ]
+      )
+    ]);
+  
+    const [access_token, refresh_token] = token;
+  
+    await databaseService.RefreshTokens.insertOne(
+      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token })
+    );
+  
     return {
       access_token,
       refresh_token
-    }
+    };
   }
   
-  async resendVerifyEmail(user_id : string) {
-    //Gia bo gui email
+  async resendVerifyEmail(user_id: string) {
+    const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) });
+  
     const email_verify_token = await this.signEmailVerifyToken({
       user_id,
-      verify: UserVerifyStatus.Unverified
-    })
-    console.log('resend verify email: ', email_verify_token)
-
-    // cap nhat lai gia tri email_verify_token trong document user
+      verify: UserVerifyStatus.Unverified,
+      role: user?.role || "user" // Lấy role từ tài liệu hiện tại hoặc mặc định là 'user'
+    });
+  
+    console.log("resend verify email: ", email_verify_token);
+  
+    // Cập nhật lại giá trị email_verify_token trong document user
     await databaseService.users.updateOne(
       { _id: new ObjectId(user_id) },
       {
         $set: {
-          email_verify_token,
+          email_verify_token
         },
         $currentDate: { updated_at: true }
       }
-    )
-    return {message: USERS_MESSAGES.RESEND_VERIFY_EMAIL_SUCCESS}
+    );
+  
+    return { message: USERS_MESSAGES.RESEND_VERIFY_EMAIL_SUCCESS };
   }
-  async forgotPassword({user_id, verify} : {user_id: string, verify: UserVerifyStatus}) {
-    const forgot_password_token = await this.signForgotPasswordToken({user_id, verify})
-    databaseService.users.updateOne(
+  async forgotPassword({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
+    const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) });
+  
+    const forgot_password_token = await this.signForgotPasswordToken({
+      user_id,
+      verify,
+      role: user?.role || "user" // Lấy role từ tài liệu hiện tại hoặc mặc định là 'user'
+    });
+  
+    await databaseService.users.updateOne(
       { _id: new ObjectId(user_id) },
       {
         $set: {
@@ -254,12 +391,14 @@ class UsersService {
         },
         $currentDate: { updated_at: true }
       }
-    )
-    // gui email kem duong link den email nguoi dung : https://twitter.com/reset-password?token=<forgot_password_token>
-    console.log('forgot_password_token: ', forgot_password_token)
+    );
+  
+    // Giả sử gửi email kèm đường link đến email người dùng
+    console.log("forgot_password_token: ", forgot_password_token);
+  
     return {
       message: USERS_MESSAGES.CHECK_EMAIL_TO_RESET_PASSWORD
-    }
+    };
   }
   async resetPassword(user_id : string, password : string) {
     databaseService.users.updateOne(
