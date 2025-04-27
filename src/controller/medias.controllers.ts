@@ -10,7 +10,7 @@ import mime from 'mime'
 
 
 export const uploadImageController = async (req: Request, res: Response, next: NextFunction) => {
-  const url = await mediasService.handleUploadImage(req)
+  const url = await mediasService.UploadImage(req)
   res.json({
     message: USERS_MESSAGES.UPLOAD_SUCCESS,
     result: url
@@ -66,7 +66,14 @@ export const serveVideoStreamController = (req: Request, res: Response, next: Ne
 }
 
 export const uploadVideoController = async (req: Request, res: Response, next: NextFunction) => {
-  const url = await mediasService.handleUploadVideo(req)
+  const url = await mediasService.UploadVideo(req)
+  res.json({
+    message: USERS_MESSAGES.UPLOAD_SUCCESS,
+    result: url
+  })
+}
+export const uploadVideoHLSController = async (req: Request, res: Response, next: NextFunction) => {
+  const url = await mediasService.UploadVideoHLS(req)
   res.json({
     message: USERS_MESSAGES.UPLOAD_SUCCESS,
     result: url
