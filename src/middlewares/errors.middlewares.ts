@@ -17,7 +17,7 @@ export const defaultErrorHandler = (err: any, req: Request, res: Response, next:
   
 
   // Trả về phản hồi lỗi
-  return res.status(HTTP_STATUS.INTERNAL_SEVER_ERROR).json({
+  return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
     message: err.message,
     errorinfo: omit(errorDetails, ['stack']) // Chỉ gửi thông tin cần thiết
   });

@@ -50,20 +50,31 @@ export const handleUploadImage = async (req: Request) => {
 
 }
 
+//Cach 1 : Tạo unique id cho video ngay từ đầu
+//Cach 2 : Đợi video upload xong rồi tạo folder, move video vào
+
 export const handleUploadVideo = async (req: Request) => {
   const formidable = (await import('formidable')).default
+  const nanoid = (await import('nanoid')).nanoid
+  const idName = nanoid()
+  const folderPath = path.resolve(UPLOAD_VIDEO_DIR, idName)
+  fs.mkdirSync(folderPath)
   const form = formidable({
-    uploadDir: UPLOAD_VIDEO_DIR,
+    uploadDir: folderPath,
     maxFiles: 1,
-    maxFileSize: 100* 1024 * 1024, // 300KB
+    maxFileSize: 100 * 1024 * 1024, // 100MB cho mỗi file
+    
     filter: function({name, originalFilename, mimetype}) {
       const valid = name === 'video' && Boolean(mimetype?.includes('mp4') || mimetype?.includes('video/'))
       if(!valid) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         form.emit('error' as any , new Error('File is not a video') as any)
       }
-    return true
-    } 
+    return valid 
+    },
+    filename : function () {
+      return idName 
+    }
   })
 
   return new Promise<File[]>((resolve, reject) => {

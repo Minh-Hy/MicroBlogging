@@ -69,14 +69,15 @@ export const refreshTokenController = async (
   const { refresh_token } = req.body;
 
   // Giải mã refresh token để lấy user_id, verify, và role
-  const { user_id, verify, role } = req.decoded_refresh_token as TokenPayload;
+  const { user_id, verify, role, exp } = req.decoded_refresh_token as TokenPayload;
 
   // Gọi service để tạo token mới
   const result = await usersService.refreshToken({
     user_id,
     verify,
     refresh_token,
-    role // Truyền role vào service
+    role,
+    exp // Truyền role vào service
   });
 
   // Trả về kết quả

@@ -3,7 +3,7 @@ import User from "~/models/schemas/User.schema"
 import databaseService from "./database.services"
 import { RegisterReqBody, UpdateMeReqBody } from "~/models/requests/user.requests"
 import { hashPassword } from "~/utils/crypto"
-import { signToken } from "~/utils/jwt"
+import { signToken, verifyToken } from "~/utils/jwt"
 import { TokenType, UserVerifyStatus } from "~/constants/enums"
 import RefreshToken from '~/models/schemas/RefreshToken.schemas';
 import { ObjectId } from 'mongodb';
@@ -44,12 +44,27 @@ class UsersService {
   private signRefreshToken({
     user_id,
     verify,
-    role // Thêm trường role
+    role, // Thêm trường role
+    exp
   }: {
     user_id: string;
     verify: UserVerifyStatus;
     role: "admin" | "user"; // Thêm kiểu dữ liệu cho role
+    exp ?: number; // Thêm kiểu dữ liệu cho exp
   }) {
+    if(exp) {
+      return signToken({
+        payload: {
+          user_id,
+          token_type: TokenType.RefreshToken,
+          verify,
+          role, // Thêm role vào payload
+          exp
+        },
+        privateKey: process.env.JWT_SECRET_REFRESH_TOKEN as string,
+      
+      });
+    }
     return signToken({
       payload: {
         user_id,
@@ -124,6 +139,14 @@ class UsersService {
       this.signRefreshToken({ user_id, verify, role }) // Truyền role vào signRefreshToken
     ]);
   }
+
+  private decodeRefreshToken(refresh_token: string) {
+    return verifyToken({
+      token: refresh_token,
+      secretOrPublicKey: process.env.JWT_SECRET_REFRESH_TOKEN as string,
+  })}
+
+
   async register(payload: RegisterReqBody) {
     const user_id = new ObjectId();
     
@@ -154,8 +177,9 @@ class UsersService {
     });
   
     // Lưu refresh token vào database
+    const {iat, exp} = await this.decodeRefreshToken(refresh_token)
     await databaseService.RefreshTokens.insertOne(
-      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token })
+      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token, iat, exp })
     );
   
     console.log('email_verify_token: ', email_verify_token);
@@ -186,8 +210,9 @@ class UsersService {
     });
   
     // Lưu refresh token vào database
+    const {iat, exp} = await this.decodeRefreshToken(refresh_token)
     await databaseService.RefreshTokens.insertOne(
-      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token })
+      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token, iat, exp })
     );
   
     // Trả về kết quả bao gồm role
@@ -260,9 +285,9 @@ class UsersService {
         verify: user.verify,
         role: user.role // Truyền role từ tài liệu hiện tại
       });
-  
+      const {iat, exp} = await this.decodeRefreshToken(refresh_token)
       await databaseService.RefreshTokens.insertOne(
-        new RefreshToken({ user_id: user._id, token: refresh_token })
+        new RefreshToken({ user_id: user._id, token: refresh_token, iat, exp })
       );
   
       return {
@@ -296,19 +321,24 @@ class UsersService {
     user_id,
     verify,
     refresh_token,
-    role // Thêm role vào tham số
+    role, // Thêm role vào tham số
+    exp 
   }: {
     user_id: string;
     verify: UserVerifyStatus;
     refresh_token: string;
     role: "admin" | "user"; // Thêm kiểu dữ liệu cho role
+    exp : number; // Thêm kiểu dữ liệu cho exp
   }) {
     const [new_access_token, new_refresh_token] = await Promise.all([
       this.signAccessToken({ user_id, verify, role }), // Truyền role vào signAccessToken
-      this.signRefreshToken({ user_id, verify, role }), // Truyền role vào signRefreshToken
+      this.signRefreshToken({ user_id, verify, role, exp }), // Truyền role vào signRefreshToken
       databaseService.RefreshTokens.deleteOne({ token: refresh_token })
     ]);
-  
+    const decoded_refresh_token = await this.decodeRefreshToken(new_refresh_token)
+    await databaseService.RefreshTokens.insertOne(
+      new RefreshToken({ user_id: new ObjectId(user_id), token: new_refresh_token, iat: decoded_refresh_token.iat, exp: decoded_refresh_token.exp })
+    );
     return {
       access_token: new_access_token,
       refresh_token: new_refresh_token
@@ -340,8 +370,9 @@ class UsersService {
   
     const [access_token, refresh_token] = token;
   
+    const {iat, exp} = await this.decodeRefreshToken(refresh_token)
     await databaseService.RefreshTokens.insertOne(
-      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token })
+      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token, iat, exp })
     );
   
     return {
