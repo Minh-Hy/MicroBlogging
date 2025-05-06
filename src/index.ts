@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import express from 'express';
 import dotenv from 'dotenv';
 import usersRouter from './routes/users.routes';
@@ -9,6 +10,9 @@ import { UPLOAD_VIDEO_DIR } from './constants/dir';
 import staticRouter from './routes/static.routes';
 import cors from 'cors';
 import type { Request, Response, NextFunction } from 'express';
+import tweetsRouter from './routes/tweets.routes';
+import bookmarksRouter from './routes/bookmarks.routes';
+import likesRouter from './routes/likes.routes';
 // Load biến môi trường trước khi làm bất cứ thứ gì khác
 dotenv.config();
 
@@ -23,11 +27,19 @@ initFolder();
 app.use(express.json());
 
 // Kết nối database
-databaseService.connect();
+databaseService.connect().then(() => {
+  databaseService.indexUser();
+  databaseService.indexRefreshToken();
+  databaseService.indexVideoStatus();
+  databaseService.indexFollowers();
+})
 
 // Router
 app.use('/users', usersRouter);
 app.use('/medias', mediasRouter);
+app.use('/tweets', tweetsRouter);
+app.use('/bookmarks',bookmarksRouter);
+app.use('/likes', likesRouter);
 app.use('/static', staticRouter)
 app.use('/static/video', express.static(UPLOAD_VIDEO_DIR))
 // Middleware xử lý lỗi phải đặt sau tất cả route

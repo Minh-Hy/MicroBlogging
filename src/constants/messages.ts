@@ -63,3 +63,29 @@ export const USERS_MESSAGES = {
   REFRESH_TOKEN_SUCCESS: 'Refresh token success',
   GET_VIDEO_STATUS_SUCCESS: 'Get video status success',
 } as const
+
+export const TWEET_MESSAGES = {
+ INVALID_TWEET_TYPE: 'Invalid tweet type',
+INVALID_TWEET_AUDIENCE: 'Invalid tweet audience',
+PARENT_ID_MUST_BE_TWEET_ID: 'Parent id must be tweet id',
+PARENT_ID_MUST_BE_NULL: 'Parent id must be null',
+CONTENT_MUST_BE_STRING: 'Content must be string',
+CONTENT_MUST_BE_EMPTY_STRING: 'Content must be empty string',
+HASHTAGS_MUST_BE_AN_ARRAY_OF_STRINGS: 'Hashtags must be an array of strings',
+MENTIONS_MUST_BE_AN_ARRAY_OF_USER_IDS: 'Mentions must be an array of user ids',
+MENTIONS_MUST_BE_AN_ARRAY_OF_MEDIA_OBJECTS: 'Mentions must be an array of media objects',
+INVALID_TWEET_ID: 'Invalid tweet id',
+TWEET_NOT_FOUND: 'Tweet not found',
+
+} as const
+
+export const BOOKMARK_MESSAGES = {
+  BOOKMARK_SUCCESS: 'Bookmark success',
+  UNBOOKMARK_SUCCESS: 'Unbookmark success',
+} as const
+
+export const LIKE_MESSAGES = {
+  LIKE_SUCCESS: 'Like success',
+  UNLIKE_SUCCESS: 'Unlike success',
+} as const
+

@@ -149,12 +149,23 @@ class UsersService {
 
   async register(payload: RegisterReqBody) {
     const user_id = new ObjectId();
-    
+  
+    // Tự động generate username từ email hoặc chuỗi ngẫu nhiên
+    const baseUsername = payload.email.split('@')[0]; // vd: "john" từ "john@gmail.com"
+    let generatedUsername = baseUsername;
+    let count = 0;
+  
+    // Đảm bảo username là duy nhất
+    while (await databaseService.users.findOne({ username: generatedUsername })) {
+      count++;
+      generatedUsername = `${baseUsername}${count}`; // john1, john2, v.v.
+    }
+  
     // Tạo token xác thực email
     const email_verify_token = await this.signEmailVerifyToken({
       user_id: user_id.toString(),
       verify: UserVerifyStatus.Unverified,
-      role: "user" // Mặc định role là 'user'
+      role: "user"
     });
   
     // Thêm tài khoản người dùng vào database
@@ -162,10 +173,11 @@ class UsersService {
       new User({
         ...payload,
         _id: user_id,
+        username: generatedUsername,
         email_verify_token,
         date_of_birth: new Date(payload.date_of_birth),
         password: hashPassword(payload.password),
-        role: "user" // Mặc định role là 'user'
+        role: "user"
       })
     );
   
@@ -173,11 +185,11 @@ class UsersService {
     const [access_token, refresh_token] = await this.signAccessAndRefreshToken({
       user_id: user_id.toString(),
       verify: UserVerifyStatus.Unverified,
-      role: "user" // Truyền role vào token
+      role: "user"
     });
   
     // Lưu refresh token vào database
-    const {iat, exp} = await this.decodeRefreshToken(refresh_token)
+    const { iat, exp } = await this.decodeRefreshToken(refresh_token);
     await databaseService.RefreshTokens.insertOne(
       new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token, iat, exp })
     );
@@ -189,6 +201,7 @@ class UsersService {
       refresh_token
     };
   }
+  
   async checkEmailExist(email : string) {
     const user = await databaseService.users.findOne({ email })
     return Boolean(user)
