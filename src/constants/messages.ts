@@ -76,6 +76,7 @@ MENTIONS_MUST_BE_AN_ARRAY_OF_USER_IDS: 'Mentions must be an array of user ids',
 MENTIONS_MUST_BE_AN_ARRAY_OF_MEDIA_OBJECTS: 'Mentions must be an array of media objects',
 INVALID_TWEET_ID: 'Invalid tweet id',
 TWEET_NOT_FOUND: 'Tweet not found',
+TWEET_IS_NOT_PUBLIC: 'Tweet is not public',
 
 } as const
 
