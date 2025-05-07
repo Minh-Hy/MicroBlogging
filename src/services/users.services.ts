@@ -14,6 +14,7 @@ import ms from 'ms'
 import axios from "axios"
 import { ErrorWithStatus } from "~/models/Errors"
 import HTTP_STATUS from "~/constants/httpStatus"
+import { sendMail } from "./mailer.services"
 
 config()
 
@@ -193,12 +194,28 @@ class UsersService {
     await databaseService.RefreshTokens.insertOne(
       new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token, iat, exp })
     );
-  
+    
+    //Flow gui mail xac thuc
+    // 1. server gui mail xac thuc den email
+    // 2. client nhan mail va click vao link xac thuc
+    // 3. client gui request xac thuc den server with email_verify_token
+    // 4. server kiem tra email_verify_token va cap nhat trang thai xac thuc cho user
+    // 5. Client rececive access_token va refresh_token
+
     console.log('email_verify_token: ', email_verify_token);
-  
+    await sendMail(
+      payload.email,
+      'Xác minh email của bạn',
+      `
+        <h2>Chào mừng bạn đến với ứng dụng của chúng tôi!</h2>
+        <p>Vui lòng nhấn vào liên kết bên dưới để xác minh địa chỉ email của bạn:</p>
+        <a href="${process.env.CLIENT_URL}/verify-email?token=${email_verify_token}">Xác minh email</a>
+        <p>Liên kết sẽ hết hạn sau 24 giờ.</p>
+      `
+    )
     return {
       access_token,
-      refresh_token
+      refresh_token,
     };
   }
   
@@ -232,7 +249,7 @@ class UsersService {
     return {
       access_token,
       refresh_token,
-      role // Thêm role vào kết quả
+      role, // Thêm role vào kết quả
     };
   }
 
@@ -420,6 +437,7 @@ class UsersService {
   }
   async forgotPassword({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
     const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) });
+    if (!user) throw new Error('User not found') // nên xử lý rõ ràng
   
     const forgot_password_token = await this.signForgotPasswordToken({
       user_id,
@@ -439,6 +457,15 @@ class UsersService {
   
     // Giả sử gửi email kèm đường link đến email người dùng
     console.log("forgot_password_token: ", forgot_password_token);
+      // Gửi email chứa link reset
+    const resetLink = `${process.env.CLIENT_URL}/forgot-password?token=${forgot_password_token}`
+    const emailContent = `
+    <h2>Yêu cầu đặt lại mật khẩu</h2>
+    <p>Nhấp vào liên kết bên dưới để đặt lại mật khẩu của bạn:</p>
+    <a href="${resetLink}">resetLink</a>
+    <p>Liên kết sẽ hết hạn sau 24 giờ.</p>`
+
+  await sendMail(user.email, 'Đặt lại mật khẩu', emailContent)
   
     return {
       message: USERS_MESSAGES.CHECK_EMAIL_TO_RESET_PASSWORD

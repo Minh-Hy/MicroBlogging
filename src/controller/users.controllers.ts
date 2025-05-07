@@ -11,6 +11,7 @@ import databaseService from '~/services/database.services';
 import HTTP_STATUS from '~/constants/httpStatus';
 import { UserVerifyStatus } from "~/constants/enums"
 import { config } from "dotenv"
+import { sendMail } from "~/services/mailer.services"
 config()
 export const loginController = async (
   req: Request<ParamsDictionary, any, LoginReqBody>,
