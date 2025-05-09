@@ -401,26 +401,26 @@ export const updateMeValidator = validate(checkSchema({
         errorMessage: USERS_MESSAGES.WEBSITE_LENGTH
       },
   },
-  username: {
-    optional : true,
-    isString: {
-      errorMessage: USERS_MESSAGES.USERNAME_MUST_BE_A_STRING
-    },
-    trim: true,
-    custom: {
-      options : async(value, {req}) => {
-        if(!REGEX_USERNAME.test(value)) {
-          throw Error(USERS_MESSAGES.USERNAME_INVALID)
-        }
+  // username: {
+  //   optional : true,
+  //   isString: {
+  //     errorMessage: USERS_MESSAGES.USERNAME_MUST_BE_A_STRING
+  //   },
+  //   trim: true,
+  //   custom: {
+  //     options : async(value, {req}) => {
+  //       if(!REGEX_USERNAME.test(value)) {
+  //         throw Error(USERS_MESSAGES.USERNAME_INVALID)
+  //       }
 
-        const user = await databaseService.users.findOne({username: value})
-        //neu da ton tai username nay trong db thi chung ta khong cho phep update
-        if (user) {
-          throw Error(USERS_MESSAGES.USERNAME_EXISTED)
-        }
-      }
-    }
-  },
+  //       const user = await databaseService.users.findOne({username: value})
+  //       //neu da ton tai username nay trong db thi chung ta khong cho phep update
+  //       if (user) {
+  //         throw Error(USERS_MESSAGES.USERNAME_EXISTED)
+  //       }
+  //     }
+  //   }
+  // },
   avatar: imageSchema,
   cover_photo: imageSchema
 }, ['body']))
