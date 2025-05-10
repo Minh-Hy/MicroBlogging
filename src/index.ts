@@ -1,3 +1,4 @@
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import express from 'express';
 import dotenv from 'dotenv';
@@ -13,6 +14,7 @@ import type { Request, Response, NextFunction } from 'express';
 import tweetsRouter from './routes/tweets.routes';
 import bookmarksRouter from './routes/bookmarks.routes';
 import likesRouter from './routes/likes.routes';
+// import'~/utils/fake'
 // Load biến môi trường trước khi làm bất cứ thứ gì khác
 dotenv.config();
 

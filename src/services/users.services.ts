@@ -152,7 +152,7 @@ class UsersService {
     const user_id = new ObjectId();
   
     // Tự động generate username từ email hoặc chuỗi ngẫu nhiên
-    const baseUsername = payload.email.split('@')[0]; // vd: "john" từ "john@gmail.com"
+    const baseUsername = `user${user_id.toString()}`; // vd: "john" từ "john@gmail.com"
     let generatedUsername = baseUsername;
     let count = 0;
   
