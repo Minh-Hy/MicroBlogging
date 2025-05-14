@@ -14,7 +14,8 @@ import type { Request, Response, NextFunction } from 'express';
 import tweetsRouter from './routes/tweets.routes';
 import bookmarksRouter from './routes/bookmarks.routes';
 import likesRouter from './routes/likes.routes';
-// import'~/utils/fake'
+import'~/utils/fake'
+// import '~/utils/deleteFakeData'
 // Load biến môi trường trước khi làm bất cứ thứ gì khác
 dotenv.config();
 

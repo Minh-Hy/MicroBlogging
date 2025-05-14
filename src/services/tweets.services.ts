@@ -7,6 +7,7 @@ import { TweetType } from "~/constants/enums";
 
 
 
+
 class TweetsService {
   async checkAndCreateHashtags(hashtags: string[]) {
     const hashtagDocuments = await Promise.all(hashtags.map((hashtag) => {
@@ -31,7 +32,7 @@ class TweetsService {
     const result = await databaseService.tweets.insertOne(new Tweet({
       audience: body.audience,
       content: body.content,
-      hashtags: hashtags, // cho nay chua lam
+      hashtags: hashtags, 
       mentions: body.mentions,
       medias: body.medias,
       parent_id: body.parent_id,
@@ -145,7 +146,7 @@ class TweetsService {
           }
         }
       }, 
-      'commetn_count': {
+      'comment_count': {
         '$size': {
           '$filter': {
             'input': '$tweet_children', 
@@ -213,6 +214,241 @@ class TweetsService {
       total,
     }
   }
+
+  async getNewFeeds({user_id,limit,page}:{user_id: string,limit: number,page: number}){
+    const user_id_obj = new ObjectId(user_id)
+
+    const followed_user_ids = await databaseService.followers.find(
+      {
+      user_id: user_id_obj
+      },
+      {
+        projection: {
+          followed_user_id: 1,
+          _id: 0
+        }
+      }
+      ).toArray()
+    const ids = followed_user_ids.map((item) => item.followed_user_id)
+    const oneTweet = await databaseService.tweets.findOne({ user_id: { $ne: user_id_obj } })
+console.log('🧪 tweet.user_id:', oneTweet?.user_id)
+
+const foundUser = await databaseService.users.findOne({ _id: oneTweet?.user_id })
+console.log('🔍 matched user:', foundUser)
+
+    //Mong muon newFeeds se lay luon ca tweet cua minh 
+    ids.push(user_id_obj)
+  const tweets = await databaseService.tweets.aggregate<Tweet>([
+  {
+    '$match': {
+      'user_id': { $in: ids }
+    }
+  },
+  {
+    '$lookup': {
+      'from': 'users',
+      'localField': 'user_id',
+      'foreignField': '_id',
+      'as': 'user'
+    }
+  },
+  {
+  $unwind: {
+    path: '$user'
+  }
+  },
+  {
+    '$match': {
+      '$or': [
+        { audience: 0 },
+        {
+          $and: [
+            { audience: 1 },
+            {
+             "user.twitter_circle": {
+              $in : [user_id_obj]
+             }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    '$skip': limit * (page - 1)
+  },
+  {
+    '$limit': limit
+  },
+  {
+    '$lookup': {
+      'from': 'hashtags',
+      'localField': 'hashtags',
+      'foreignField': '_id',
+      'as': 'hashtags'
+    }
+  },
+  {
+    '$lookup': {
+      'from': 'users',
+      'localField': 'mentions',
+      'foreignField': '_id',
+      'as': 'mentions'
+    }
+  },
+  {
+    '$addFields': {
+      'mentions': {
+        '$map': {
+          'input': '$mentions',
+          'as': 'mention',
+          'in': {
+            '_id': '$$mention._id',
+            'name': '$$mention.name',
+            'username': '$$mention.username',
+            'email': '$$mention.email'
+          }
+        }
+      }
+    }
+  },
+  {
+    '$lookup': {
+      'from': 'bookmarks',
+      'localField': '_id',
+      'foreignField': 'tweet_id',
+      'as': 'bookmarks'
+    }
+  },
+  {
+    '$lookup': {
+      'from': 'likes',
+      'localField': '_id',
+      'foreignField': 'tweet_id',
+      'as': 'likes'
+    }
+  },
+  {
+    '$lookup': {
+      'from': 'tweets',
+      'localField': '_id',
+      'foreignField': 'parent_id',
+      'as': 'tweet_children'
+    }
+  },
+  {
+    '$addFields': {
+      'bookmarks': { '$size': '$bookmarks' },
+      'likes': { '$size': '$likes' },
+      'retweet_count': {
+        '$size': {
+          '$filter': {
+            'input': '$tweet_children',
+            'as': 'item',
+            'cond': { '$eq': ['$$item.type', TweetType.Retweet] }
+          }
+        }
+      },
+      'comment_count': {
+        '$size': {
+          '$filter': {
+            'input': '$tweet_children',
+            'as': 'item',
+            'cond': { '$eq': ['$$item.type', TweetType.Comment] }
+          }
+        }
+      },
+      'quote_count': {
+        '$size': {
+          '$filter': {
+            'input': '$tweet_children',
+            'as': 'item',
+            'cond': { '$eq': ['$$item.type', TweetType.QuoteTweet] }
+          }
+        }
+      }
+    }
+  },
+  {
+    '$project': {
+      'tweet_children': 0,
+      'user.password': 0,
+      'user.email_verify_token': 0,
+      'user.forgot_password_token': 0,
+      'user.twitter_circle': 0,
+      'user.date_of_birth': 0
+    }
+  },
+  
+]).toArray()
+
+console.log('[DEBUG] tweets count:', tweets.length);
+const tweet_ids = tweets.map(tweet => tweet._id as ObjectId)
+const inc = user_id ? { user_views: 1 } : { guest_views: 1 }
+  const date = new Date()
+  const [, total] = await Promise.all([databaseService.tweets.updateMany({
+    _id: {
+      $in: tweet_ids
+    }
+  }, {
+    $inc: inc,
+    $set: {
+      updated_at: date
+    }
+  }),
+  databaseService.tweets.aggregate([// {
+  //   '$match': {
+  //     'user_id': {
+  //       $in: ids
+  //     }
+  //   }
+  // }, 
+  {
+    '$lookup': {
+      'from': 'users', 
+      'localField': 'user_id', 
+      'foreignField': '_id', 
+      'as': 'user'
+    }
+  }, {
+    '$unwind': {
+      'path': '$user'
+    }
+  }, {
+    '$match': {
+      '$or': [
+        {
+          'audience': 0
+        }, {
+          '$and': [
+            {
+              'audience': 1
+            }, {
+              $or : [
+                { 'user._id': user_id_obj },             // ✅ là chính chủ
+                { 'user.twitter_circle': user_id_obj }   // ✅ nằm trong twitter_circle]
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+{
+  $count: 'total'
+}]).toArray()])
+  tweets.forEach(tweet => {
+    tweet.updated_at = date
+    tweet.user_views += 1
+  })
+    return {
+      tweets,
+      total : total[0].total, 
+    }
+}
+
+
+
 
 }
 

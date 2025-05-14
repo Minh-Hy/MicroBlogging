@@ -297,6 +297,12 @@ export const tweetIdValidator = validate(
           errorMessage: TWEET_MESSAGES.INVALID_TWEET_TYPE
         }
       },
+      
+    },['query'])
+  )
+
+  export const paginationValidator = validate(
+    checkSchema({
       limit: {
         isNumeric: true,
          custom: {
@@ -321,5 +327,4 @@ export const tweetIdValidator = validate(
           }
         }
       }
-    },['query'])
-  )
+    },['query']))

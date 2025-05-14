@@ -54,6 +54,7 @@ const insertMultipleUsers = async (users : RegisterReqBody[]) => {
       const user_id = new ObjectId();
       await databaseService.users.insertOne(
         new User({
+          _id: user_id,
           ...user,
           username: `user${user_id.toString()}`,
           password: await hashPassword(user.password),
@@ -73,7 +74,7 @@ const followMultipleUsers = async (user_id: ObjectId, followed_user_ids: ObjectI
   console.log('Following users...');
   const result = await Promise.all(
     followed_user_ids.map(async (followed_user_id) => {
-      databaseService.followers.insertOne(
+      await databaseService.followers.insertOne(
         new Follower({
           user_id,
           followed_user_id: new ObjectId(followed_user_id),

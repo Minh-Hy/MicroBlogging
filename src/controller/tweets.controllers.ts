@@ -2,7 +2,7 @@ import { TweetType } from '~/constants/enums';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response} from "express"
 import {ParamsDictionary} from 'express-serve-static-core'
-import { TweetParam, TweetQuery, TweetRequestBody } from "~/models/requests/tweets.requests"
+import { Pagination, TweetParam, TweetQuery, TweetRequestBody } from "~/models/requests/tweets.requests"
 import { TokenPayload } from "~/models/requests/user.requests";
 import tweetsService from "~/services/tweets.services";
 
@@ -64,3 +64,23 @@ export const getTweetChildrenController = async (
     }
   })
 };
+
+export const getNewFeedsController = async (req : Request<ParamsDictionary, any, any, Pagination>, res: Response) => {
+  const user_id = req.decoded_authorization?.user_id as string
+  const page = Number(req.query.page)
+  const limit = Number(req.query.limit)
+  const result = await tweetsService.getNewFeeds({
+    user_id, 
+    limit, 
+    page
+  })
+  res.json({
+    message: "Get new feeds successfully",
+    result : {
+      tweet : result.tweets,
+      limit,
+      page,
+      total_page : Math.ceil(result.total / limit)
+    }
+  })
+}
