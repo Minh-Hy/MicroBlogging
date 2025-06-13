@@ -230,20 +230,14 @@ class TweetsService {
       }
       ).toArray()
     const ids = followed_user_ids.map((item) => item.followed_user_id)
-    const oneTweet = await databaseService.tweets.findOne({ user_id: { $ne: user_id_obj } })
-console.log('🧪 tweet.user_id:', oneTweet?.user_id)
-
-const foundUser = await databaseService.users.findOne({ _id: oneTweet?.user_id })
-console.log('🔍 matched user:', foundUser)
-
     //Mong muon newFeeds se lay luon ca tweet cua minh 
     ids.push(user_id_obj)
   const tweets = await databaseService.tweets.aggregate<Tweet>([
-  {
-    '$match': {
-      'user_id': { $in: ids }
-    }
-  },
+  // {
+  //   '$match': {
+  //     'user_id': { $in: ids }
+  //   }
+  // },
   {
     '$lookup': {
       'from': 'users',
@@ -382,8 +376,8 @@ console.log('🔍 matched user:', foundUser)
   
 ]).toArray()
 
-console.log('[DEBUG] tweets count:', tweets.length);
-const tweet_ids = tweets.map(tweet => tweet._id as ObjectId)
+
+const tweet_ids = tweets.map((tweet) => tweet._id as ObjectId)
 const inc = user_id ? { user_views: 1 } : { guest_views: 1 }
   const date = new Date()
   const [, total] = await Promise.all([databaseService.tweets.updateMany({
@@ -443,7 +437,7 @@ const inc = user_id ? { user_views: 1 } : { guest_views: 1 }
   })
     return {
       tweets,
-      total : total[0].total, 
+      total : total[0]?.total || 0, 
     }
 }
 

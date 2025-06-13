@@ -92,3 +92,10 @@ export const LIKE_MESSAGES = {
   UNLIKE_SUCCESS: 'Unlike success',
 } as const
 
+export const SEARCH_MESSAGES = {
+  CONTENT_MUST_BE_A_STRING: 'Content must be a string',
+}
+
+export const REPORT_MESSAGES = {
+  REPORT_SUCCESS: 'Report success',
+}

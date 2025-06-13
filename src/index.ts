@@ -14,20 +14,26 @@ import type { Request, Response, NextFunction } from 'express';
 import tweetsRouter from './routes/tweets.routes';
 import bookmarksRouter from './routes/bookmarks.routes';
 import likesRouter from './routes/likes.routes';
-import'~/utils/fake'
+import searchRouter from './routes/search.routes';
+import { createServer } from "http";
+import messagesRouter from './routes/messages.routes';
+import { initSocketIO } from './socket';
+import adminRouter from './routes/admin.routes';
+
+// import'~/utils/fake'
 // import '~/utils/deleteFakeData'
 // Load biến môi trường trước khi làm bất cứ thứ gì khác
 dotenv.config();
 
 const app = express();
+const httpServer = createServer(app);
 const port = process.env.PORT || 4000;
 app.use(cors())
 //tao folder uploads
 
 initFolder();
 
-// Middleware để parse JSON
-app.use(express.json());
+
 
 // Kết nối database
 databaseService.connect().then(() => {
@@ -35,8 +41,10 @@ databaseService.connect().then(() => {
   databaseService.indexRefreshToken();
   databaseService.indexVideoStatus();
   databaseService.indexFollowers();
+  databaseService.indexTweets();
 })
 
+app.use(express.json());
 // Router
 app.use('/users', usersRouter);
 app.use('/medias', mediasRouter);
@@ -45,12 +53,19 @@ app.use('/bookmarks',bookmarksRouter);
 app.use('/likes', likesRouter);
 app.use('/static', staticRouter)
 app.use('/static/video', express.static(UPLOAD_VIDEO_DIR))
+app.use('/search', searchRouter)
+app.use('/messages', messagesRouter)
+app.use('/admin', adminRouter);
+
 // Middleware xử lý lỗi phải đặt sau tất cả route
 // ép kiểu rõ ràng để TS hiểu là error middleware
 app.use(defaultErrorHandler as (err: any, req: Request, res: Response, next: NextFunction) => void);
 
 
-app.listen(port, () => {
+// Khởi tạo socket riêng biệt
+initSocketIO(httpServer);
+
+httpServer.listen(port, () => {
   console.log(`🚀 Server đang chạy tại http://localhost:${port}`);
 });
 

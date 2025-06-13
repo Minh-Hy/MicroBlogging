@@ -147,7 +147,7 @@ export const verifyForgotPasswordController = async (req : Request<ParamsDiction
   return
 };
 
-export const resetPasswordController = async (req : Request<ParamsDictionary, any, ResetPasswordReqBody>, res: Response, next: NextFunction) => {
+export const resetPasswordController = async (req : Request, res: Response, next: NextFunction) => {
   const {user_id} = req.decoded_forgot_password_token as TokenPayload
   const {password} = req.body
   const result = await usersService.resetPassword(user_id, password)
@@ -156,7 +156,7 @@ export const resetPasswordController = async (req : Request<ParamsDictionary, an
 }
 
 export const getProfileController = async (req : Request<ParamsDictionary, any, GetProfileReqParams>, res : Response, next: NextFunction) => {
-  const {user_id} = req.params
+  const {user_id} = req.decoded_authorization as TokenPayload
   const user = await usersService.getProfile(user_id)
   res.json({
     message: USERS_MESSAGES.GET_PROFILE_SUCCESS,

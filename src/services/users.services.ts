@@ -472,7 +472,7 @@ class UsersService {
     };
   }
   async resetPassword(user_id : string, password : string) {
-    databaseService.users.updateOne(
+    await databaseService.users.updateOne(
       {_id: new ObjectId(user_id)},
       {
         $set: {

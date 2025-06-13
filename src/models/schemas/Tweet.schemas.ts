@@ -23,7 +23,7 @@ export default class Tweet {
   user_id: ObjectId
   type: TweetType
   audience: TweetAudience
-  content: string
+  content: string                           
   parent_id: null | ObjectId // chi null khi tweet gốc
   hashtags: ObjectId[]
   mentions: ObjectId[]

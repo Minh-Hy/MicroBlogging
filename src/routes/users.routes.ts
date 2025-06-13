@@ -5,6 +5,8 @@ import { verifyEmailController, loginController, logoutController, registerContr
 import { wrapRequestHandler } from '~/utils/handlers';
 import { filterMiddlewares } from '~/middlewares/common.middlewares';
 import { UpdateMeReqBody } from '~/models/requests/user.requests';
+import reportsController from '~/controller/reports.controllers';
+
 const usersRouter = Router()
 /**
  * Descript  : Login user
@@ -84,7 +86,8 @@ usersRouter.post('/reset-password',resetPassWordValidator,wrapRequestHandler(res
  * Method : GET
  * Header : {Authorization: Bearer <access token>}
  */
-usersRouter.get('/:user_id',wrapRequestHandler(getProfileController))
+usersRouter.get('/me',accessTokenValidator, 
+  verifiedUserValidator, wrapRequestHandler(getProfileController))
 /**
  * Descript  : Update my profile
  * Path : /me
@@ -122,5 +125,13 @@ usersRouter.delete('/follow/:user_id',accessTokenValidator, verifiedUserValidato
   * Body : {old-password: string, password: string, confirm-password: string}
  */
 usersRouter.put('/change-password',accessTokenValidator, verifiedUserValidator,changePasswordValidator, wrapRequestHandler(changePasswordController))
+/**
+ * Descript  : Report
+ * Path : /report
+ * Method : POST
+  * Header : {Authorization: Bearer <access token>}
+  * Body : {reason: string, report_id: string, report_type: 'tweet' | 'user' | 'comment'}
+ */
+usersRouter.post('/report',accessTokenValidator, verifiedUserValidator, wrapRequestHandler(reportsController.createReport))
 
 export default usersRouter
