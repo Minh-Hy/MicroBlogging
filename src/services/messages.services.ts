@@ -4,7 +4,7 @@ import databaseService from './database.services';
 import { SendMessageReqBody } from '~/models/requests/messages.requests';
 
 class MessagesService {
-  async dsendMessage(sender_id: string, payload: SendMessageReqBody) {
+  async sendMessage(sender_id: string, payload: SendMessageReqBody) {
     const message = new Message({
       sender_id: new ObjectId(sender_id),
       receiver_id: new ObjectId(payload.receiver_id),
