@@ -293,10 +293,7 @@ class TweetsService {
           }
         },
         {
-          $skip: limit * (page - 1)
-        },
-        {
-          $limit: limit
+          $sample: { size: limit }
         },
         {
           $lookup: {
