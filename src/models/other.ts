@@ -16,4 +16,12 @@ export interface NotificationRealtimePayload {
   tweet_id?: string;
   created_at: Date;
 }
+export interface NotificationPayload {
+  user_id: string
+  sender_id: string
+  type: NotificationType
+  content?: string
+  tweet_id?: string
+}
+
 

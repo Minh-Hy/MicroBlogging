@@ -30,7 +30,7 @@ class TweetsService {
       .filter((id): id is ObjectId => id !== undefined && id !== null)
   }
   async createTweet(user_id: string, body: TweetRequestBody) {
-      console.log('=== Create Tweet Called ===', body.type, body.parent_id)
+    console.log('=== Create Tweet Called ===', body.type, body.parent_id)
     const hashtags = await this.checkAndCreateHashtags(body.hashtags)
 
     const tweetObj = new Tweet({
@@ -44,7 +44,6 @@ class TweetsService {
       user_id: new ObjectId(user_id)
     })
 
-    
     const result = await databaseService.tweets.insertOne(tweetObj)
     const tweet = await databaseService.tweets.findOne({ _id: result.insertedId })
 
@@ -60,16 +59,16 @@ class TweetsService {
     parentId?: string,
     newTweetId?: ObjectId
   ) {
-      console.log('=== Create Interaction Notification Called ===', tweetType, parentId)
+    console.log('=== Create Interaction Notification Called ===', tweetType, parentId)
     const notificationType = this.mapTweetTypeToNotificationType(tweetType)
 
     if (!notificationType || !parentId) return
 
     const parentTweet = await databaseService.tweets.findOne({ _id: new ObjectId(parentId) })
     console.log('parentId:', parentId)
-console.log('parentTweet:', parentTweet)
-console.log('actorUserId:', actorUserId)
-console.log('ownerUserId:', parentTweet?.user_id.toString())
+    console.log('parentTweet:', parentTweet)
+    console.log('actorUserId:', actorUserId)
+    console.log('ownerUserId:', parentTweet?.user_id.toString())
 
     if (parentTweet && parentTweet.user_id.toString() !== actorUserId) {
       await notificationsService.createNotificationAndEmit({
@@ -349,6 +348,12 @@ console.log('ownerUserId:', parentTweet?.user_id.toString())
             ]
           }
         },
+        {
+          $sort: {
+            created_at: -1
+          }
+        },
+
         {
           $skip: limit * (page - 1)
         },
