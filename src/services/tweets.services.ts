@@ -44,24 +44,24 @@ class TweetsService {
   }
 
   async deleteTweet(user_id: string, tweet_id: string) {
-    const tweet = await databaseService.tweets.findOne({ _id: new ObjectId(tweet_id) });
+    const tweet = await databaseService.tweets.findOne({ _id: new ObjectId(tweet_id) })
     if (!tweet) {
-      throw new Error('Tweet not found');
+      throw new Error('Tweet not found')
     }
 
     if (tweet.user_id.toString() !== user_id) {
-      throw new Error('Permission denied: You can only delete your own tweets.');
+      throw new Error('Permission denied: You can only delete your own tweets.')
     }
 
     // Xóa tweet
-    await databaseService.tweets.deleteOne({ _id: new ObjectId(tweet_id) });
+    await databaseService.tweets.deleteOne({ _id: new ObjectId(tweet_id) })
 
     // Xóa các like, bookmark, comment, retweet liên quan (nếu có)
     await Promise.all([
       databaseService.likes.deleteMany({ tweet_id: new ObjectId(tweet_id) }),
       databaseService.bookmarks.deleteMany({ tweet_id: new ObjectId(tweet_id) }),
-      databaseService.tweets.deleteMany({ parent_id: new ObjectId(tweet_id) }), // xóa children tweet
-    ]);
+      databaseService.tweets.deleteMany({ parent_id: new ObjectId(tweet_id) }) // xóa children tweet
+    ])
   }
   async increaseView(tweet_id: string, user_id: string | undefined) {
     const inc = user_id ? { user_views: 1 } : { guest_views: 1 }
@@ -361,6 +361,28 @@ class TweetsService {
         },
         {
           $lookup: {
+            from: 'bookmarks',
+            let: { tweetId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [{ $eq: ['$tweet_id', '$$tweetId'] }, { $eq: ['$user_id', new ObjectId(user_id)] }]
+                  }
+                }
+              }
+            ],
+            as: 'my_bookmark'
+          }
+        },
+        {
+          $addFields: {
+            is_bookmarked: { $gt: [{ $size: '$my_bookmark' }, 0] }
+          }
+        },
+
+        {
+          $lookup: {
             from: 'likes',
             localField: '_id',
             foreignField: 'tweet_id',
@@ -439,6 +461,7 @@ class TweetsService {
             is_liked: { $gt: [{ $size: '$my_like' }, 0] }
           }
         },
+
         {
           $lookup: {
             from: 'tweets',
