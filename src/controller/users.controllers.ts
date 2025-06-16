@@ -226,7 +226,8 @@ export const getFollowersController = async (req: Request, res: Response) => {
       followers: result.followers,
       page,
       limit,
-      total_page: Math.ceil(result.total / limit)
+      total_page: Math.ceil(result.total / limit),
+      total_followers: result.total
     }
   });
 };
@@ -244,7 +245,8 @@ export const getFollowingController = async (req: Request, res: Response) => {
       following: result.following,
       page,
       limit,
-      total_page: Math.ceil(result.total / limit)
+      total_page: Math.ceil(result.total / limit),
+      total_following: result.total
     }
   });
 };
