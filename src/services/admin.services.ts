@@ -171,12 +171,31 @@ class AdminService {
     return await databaseService.reports.find().sort({ created_at: -1 }).toArray();
   }
 
-  async updateReportStatus(reportId: string, status: 'pending' | 'reviewed' | 'resolved') {
-    await databaseService.reports.updateOne(
-      { _id: new ObjectId(reportId) },
-      { $set: { status } }
-    );
+async updateReportStatus(reportId: string, status: 'pending' | 'reviewed' | 'resolved') {
+  const report = await databaseService.reports.findOne({
+    _id: new ObjectId(reportId)
+  });
+
+  if (!report) throw new Error('Report not found');
+
+  await databaseService.reports.updateOne(
+    { _id: new ObjectId(reportId) },
+    { $set: { status } }
+  );
+
+  // Nếu report được resolved thì xóa luôn bài
+  if (status === 'resolved') {
+    if (report.content_type === 'tweet') {
+      await databaseService.tweets.deleteOne({ _id: new ObjectId(report.content_id) });
+    }
+    if (report.content_type === 'user') {
+      await databaseService.users.deleteOne({ _id: new ObjectId(report.content_id) });
+    }
+    if (report.content_type === 'comment') {
+      await databaseService.tweets.deleteOne({ _id: new ObjectId(report.content_id) });
+    }
   }
+}
 
   async dashboard() {
     const [userCount, tweetCount, reportCount] = await Promise.all([
