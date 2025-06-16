@@ -1,22 +1,22 @@
-import { Router } from 'express'
-import { accessTokenValidator, verifiedUserValidator } from '~/middlewares/users.middlewares'
-import notificationController from '~/controller/notification.controllers'
-import { wrapRequestHandler } from '~/utils/handlers'
+import { Router } from 'express';
+import { accessTokenValidator, verifiedUserValidator } from '~/middlewares/users.middlewares';
+import notificationsController from '~/controller/notification.controllers';
+import { wrapRequestHandler } from '~/utils/handlers';
 
-const notificationRouter = Router()
+const notificationsRouter = Router();
 
-notificationRouter.get(
+notificationsRouter.get(
   '/',
   accessTokenValidator,
   verifiedUserValidator,
-  wrapRequestHandler(notificationController.getNotifications)
-)
+  wrapRequestHandler(notificationsController.getNotifications)
+);
 
-notificationRouter.patch(
-  '/mark-read',
+notificationsRouter.patch(
+  '/:notification_id/read',
   accessTokenValidator,
   verifiedUserValidator,
-  wrapRequestHandler(notificationController.markAsRead)
-)
+  wrapRequestHandler(notificationsController.markAsRead)
+);
 
-export default notificationRouter
+export default notificationsRouter;

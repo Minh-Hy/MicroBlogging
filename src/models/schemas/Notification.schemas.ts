@@ -1,37 +1,36 @@
 import { ObjectId } from "mongodb";
 
-export type NotificationType = "like" | "comment" | "follow" | "chat" | "system";
+export type NotificationType = "like" | "comment" | "retweet" | "quote" | "follow" | "chat";
 
-interface NotificationTypePayload {
+interface NotificationTypeSchema {
   _id?: ObjectId;
-  receiver_id: ObjectId;
+  user_id: ObjectId;
   sender_id: ObjectId;
   type: NotificationType;
-  tweet_id?: ObjectId;
   content?: string;
+  tweet_id?: ObjectId;
   created_at?: Date;
   is_read?: boolean;
 }
 
-export default class NotificationModel {
+export default class Notification {
   _id?: ObjectId;
-  receiver_id: ObjectId;
+  user_id: ObjectId;
   sender_id: ObjectId;
   type: NotificationType;
-  tweet_id?: ObjectId;
   content: string;
+  tweet_id?: ObjectId;
   created_at: Date;
   is_read: boolean;
 
-  constructor(payload: NotificationTypePayload) {
-    const date = new Date();
+  constructor(payload: NotificationTypeSchema) {
     this._id = payload._id;
-    this.receiver_id = payload.receiver_id;
+    this.user_id = payload.user_id;
     this.sender_id = payload.sender_id;
     this.type = payload.type;
-    this.tweet_id = payload.tweet_id;
     this.content = payload.content || "";
-    this.created_at = payload.created_at || date;
-    this.is_read = payload.is_read ?? false;
+    this.tweet_id = payload.tweet_id;
+    this.created_at = payload.created_at || new Date();
+    this.is_read = payload.is_read || false;
   }
 }

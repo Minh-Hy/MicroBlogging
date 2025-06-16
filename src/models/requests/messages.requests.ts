@@ -4,3 +4,7 @@ export interface SendMessageReqBody {
   type: 'text' | 'image';
   image_url?: string;
 }
+
+export interface MarkAsReadReqBody {
+  partner_id: string;
+}

@@ -1,13 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Server, Socket } from 'socket.io';
+import messagesService from '~/services/messages.services';
+import notificationsService from '~/services/notification.services';
 
-// Define socket data type
+// Định nghĩa kiểu dữ liệu message
 interface PrivateMessagePayload {
   content: string;
   to: string;
+  type: 'text' | 'image';
+  image_url?: string;
 }
 
-// User Map kiểu an toàn
+// Định nghĩa kiểu user map an toàn
 interface UserMap {
   [userId: string]: {
     socket_id: string;
@@ -16,7 +20,6 @@ interface UserMap {
 
 const users: UserMap = {};
 
-// Hàm khởi tạo Socket.IO server
 export function initSocketIO(httpServer: any) {
   const io = new Server(httpServer, {
     cors: { origin: 'http://localhost:3000' }
@@ -31,29 +34,57 @@ export function initSocketIO(httpServer: any) {
       return socket.disconnect();
     }
 
-    // Ghi nhận user vào user map
+    // Lưu user vào map
     users[user_id] = { socket_id: socket.id };
     console.log('Current users online:', users);
 
-    // Lắng nghe tin nhắn chat riêng tư
-    socket.on('private message', (data: PrivateMessagePayload) => {
-      const receiver_socket_id = users[data.to]?.socket_id;
-      if (receiver_socket_id) {
-        io.to(receiver_socket_id).emit('receiver private message', {
+    // Xử lý tin nhắn riêng tư
+    socket.on('private message', async (data: PrivateMessagePayload) => {
+      try {
+        // 1️⃣ Lưu tin nhắn vào database
+        const savedMessage = await messagesService.sendMessage({
+          sender_id: user_id,
+          receiver_id: data.to,
           content: data.content,
-          from: user_id
+          type: data.type,
+          image_url: data.image_url
         });
 
-        // ✅ Có thể thêm emit notification ở đây nếu cần:
-        io.to(receiver_socket_id).emit('notification', {
+        // 2️⃣ Lưu notification vào database
+        await notificationsService.createNotification({
+          user_id: data.to,
+          sender_id: user_id,
           type: 'chat',
-          content: data.content,
-          from: user_id
+          content: data.content || '[Image]'
         });
+
+        // 3️⃣ Gửi tin nhắn realtime cho receiver nếu đang online
+        const receiver_socket_id = users[data.to]?.socket_id;
+        if (receiver_socket_id) {
+          io.to(receiver_socket_id).emit('receiver private message', {
+            content: savedMessage.content,
+            type: savedMessage.type,
+            image_url: savedMessage.image_url,
+            from: user_id,
+            created_at: savedMessage.created_at
+          });
+
+          // 4️⃣ Gửi thêm notification realtime
+          io.to(receiver_socket_id).emit('notification', {
+            type: 'chat',
+            title: 'New Message',
+            message: `Bạn có tin nhắn mới từ ${user_id}`,
+            sender_id: user_id,
+            content: savedMessage.content,
+            created_at: savedMessage.created_at
+          });
+        }
+      } catch (error) {
+        console.error('Error handling private message:', error);
       }
     });
 
-    // Lắng nghe ngắt kết nối
+    // Xử lý disconnect
     socket.on('disconnect', () => {
       delete users[user_id];
       console.log(`User ${socket.id} disconnected`);

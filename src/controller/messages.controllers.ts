@@ -1,15 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response } from 'express';
-import { SendMessageReqBody } from '~/models/requests/messages.requests';
 import messagesService from '~/services/messages.services';
+import { SendMessageReqBody, MarkAsReadReqBody } from '~/models/requests/messages.requests';
 import { TokenPayload } from '~/models/requests/user.requests';
 
 class MessagesController {
   async sendMessage(req: Request<any, any, SendMessageReqBody>, res: Response) {
     const { receiver_id, content, type, image_url } = req.body;
-    const { user_id } = req.decoded_authorization as TokenPayload;
+    const { user_id: sender_id } = req.decoded_authorization as TokenPayload;
 
-    const message = await messagesService.sendMessage(user_id, { receiver_id, content, type, image_url });
+    const message = await messagesService.sendMessage({
+      sender_id,
+      receiver_id,
+      content,
+      type,
+      image_url
+    });
+
     res.json({ message: 'Send message success', result: message });
   }
 
@@ -26,7 +33,7 @@ class MessagesController {
     res.json({ message: 'Get conversation success', result: messages });
   }
 
-  async markAsRead(req: Request, res: Response) {
+  async markAsRead(req: Request<any, any, MarkAsReadReqBody>, res: Response) {
     const { user_id } = req.decoded_authorization as TokenPayload;
     const { partner_id } = req.body;
 

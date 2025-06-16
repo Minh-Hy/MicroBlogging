@@ -1,16 +1,15 @@
 import { ObjectId } from 'mongodb';
 
-export type MessageTypeEnum = 'text' | 'image';
-
 export interface MessageType {
   _id?: ObjectId;
   sender_id: ObjectId;
   receiver_id: ObjectId;
   content?: string;
-  type: MessageTypeEnum;
+  type: 'text' | 'image';
   image_url?: string;
   read: boolean;
-  created_at?: Date;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export default class Message {
@@ -18,19 +17,22 @@ export default class Message {
   sender_id: ObjectId;
   receiver_id: ObjectId;
   content?: string;
-  type: MessageTypeEnum;
+  type: 'text' | 'image';
   image_url?: string;
   read: boolean;
   created_at: Date;
+  updated_at: Date;
 
-  constructor(message: MessageType) {
-    this._id = message._id;
-    this.sender_id = message.sender_id;
-    this.receiver_id = message.receiver_id;
-    this.content = message.content;
-    this.type = message.type;
-    this.image_url = message.image_url;
-    this.read = message.read ?? false;
-    this.created_at = message.created_at || new Date();
+  constructor(data: Omit<MessageType, '_id'> & { _id?: ObjectId }) {
+    const now = new Date();
+    this._id = data._id;
+    this.sender_id = data.sender_id;
+    this.receiver_id = data.receiver_id;
+    this.content = data.content || '';
+    this.type = data.type;
+    this.image_url = data.image_url || '';
+    this.read = data.read ?? false;
+    this.created_at = data.created_at ?? now;
+    this.updated_at = data.updated_at ?? now;
   }
 }

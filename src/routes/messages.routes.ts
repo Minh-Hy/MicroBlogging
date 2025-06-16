@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { accessTokenValidator, verifiedUserValidator } from '~/middlewares/users.middlewares';
 import messagesController from '~/controller/messages.controllers';
+import { accessTokenValidator, verifiedUserValidator } from '~/middlewares/users.middlewares';
 import { wrapRequestHandler } from '~/utils/handlers';
 
 const messagesRouter = Router();
@@ -19,7 +19,7 @@ messagesRouter.get(
   wrapRequestHandler(messagesController.getConversation)
 );
 
-messagesRouter.patch(
+messagesRouter.put(
   '/read',
   accessTokenValidator,
   verifiedUserValidator,
