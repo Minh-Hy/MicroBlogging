@@ -1,5 +1,5 @@
 import { Router } from "express"
-import { createTweetController, getNewFeedsController, getTweetChildrenController, getTweetController } from "~/controller/tweets.controllers"
+import { createTweetController, getNewFeedsController, getTweetChildrenController, getTweetController, deleteTweetController } from "~/controller/tweets.controllers"
 import { audienceValidator, createTweetValidator, getTweetChildrenValidator, paginationValidator, tweetIdValidator } from "~/middlewares/tweets.middlewares"
 
 import { accessTokenValidator, isUserLoggedInValidator, verifiedUserValidator } from "~/middlewares/users.middlewares"
@@ -19,7 +19,19 @@ tweetsRouter.post('/', accessTokenValidator,
    verifiedUserValidator,
    createTweetValidator, 
    wrapRequestHandler(createTweetController))
-  
+
+   /**
+ * Descript  : Delete tweet
+ * Path      : /tweets/:tweet_id
+ * Method    : DELETE
+ * Header    : { Authorization: Bearer <access token> }
+ */
+tweetsRouter.delete(
+  '/:tweet_id',
+  accessTokenValidator,
+  verifiedUserValidator,
+  wrapRequestHandler(deleteTweetController)
+);
 
 /**
  * Descript  : get tweet detail 

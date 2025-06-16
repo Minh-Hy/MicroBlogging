@@ -1,3 +1,4 @@
+
 import { TweetType } from '~/constants/enums';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response} from "express"
@@ -18,6 +19,20 @@ export const createTweetController = async (
     result
   })
 };
+
+export const deleteTweetController = async (
+  req: Request,
+  res: Response
+) => {
+  const { user_id } = req.decoded_authorization as TokenPayload;
+  const { tweet_id } = req.params as { tweet_id: string };
+
+  await tweetsService.deleteTweet(user_id, tweet_id);
+  res.json({
+    message: "Delete tweet successfully",
+  });
+};
+
 
 export const getTweetController = async (
   req: Request<ParamsDictionary, any, TweetRequestBody>,

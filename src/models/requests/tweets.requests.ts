@@ -26,3 +26,7 @@ export interface Pagination {
     limit: string
     page: string
 }
+
+export interface DeleteTweetReqParams {
+  tweet_id: string;
+}
