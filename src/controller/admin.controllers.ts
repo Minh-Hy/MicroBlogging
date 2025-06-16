@@ -1,54 +1,67 @@
-import { Request, Response } from 'express';
-import adminService from '~/services/admin.services';
-import { ParamsDictionary } from 'express-serve-static-core';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { Request, Response } from "express";
+import { ParamsDictionary } from "express-serve-static-core";
+import adminService from "~/services/admin.services";
 
-class AdminController {
-  async getAllUsers(req: Request, res: Response) {
-    const users = await adminService.getAllUsers();
-    res.json(users);
-  }
+export const getAllUsersController = async (req: Request, res: Response) => {
+  const users = await adminService.getAllUsers();
+  res.json(users);
+};
 
-  async banUser(req: Request<ParamsDictionary>, res: Response) {
-    const { userId } = req.params;
-    await adminService.banUser(userId);
-    res.json({ message: 'User banned successfully' });
-  }
+export const banUserController = async (req: Request<ParamsDictionary>, res: Response) => {
+  const { userId } = req.params;
+  await adminService.banUser(userId);
+  res.json({ message: 'User banned successfully' });
+};
 
-  async deleteUser(req: Request<ParamsDictionary>, res: Response) {
+export const unbanUserController = async (req: Request<ParamsDictionary>, res: Response) => {
+  const { userId } = req.params;
+  await adminService.unbanUser(userId);
+  res.json({ message: 'User unbanned successfully' });
+};
+
+export const deleteUserController = async (req: Request<ParamsDictionary>, res: Response) => {
   const { userId } = req.params;
   await adminService.deleteUser(userId);
   res.json({ message: 'User deleted successfully' });
-}
+};
 
-async getAllTweets(req: Request, res: Response) {
-  const tweets = await adminService.getAllTweets();
-  res.json(tweets);
-}
+export const getAllTweetsController = async (req: Request, res: Response) => {
+  const limit = parseInt(req.query.limit as string) || 20;
+  const page = parseInt(req.query.page as string) || 1;
 
-async deleteTweet(req: Request<ParamsDictionary>, res: Response) {
+  const result = await adminService.getAllTweets(limit, page);
+  res.json({
+    message: 'Get all tweets successfully',
+    result: {
+      tweets: result.tweets,
+      total: result.total,
+      page,
+      limit,
+      total_page: Math.ceil(result.total / limit)
+    }
+  });
+};
+
+export const deleteTweetController = async (req: Request<ParamsDictionary>, res: Response) => {
   const { tweetId } = req.params;
   await adminService.deleteTweet(tweetId);
   res.json({ message: 'Tweet deleted successfully' });
-}
+};
 
-async getAllReports(req: Request, res: Response) {
+export const getAllReportsController = async (req: Request, res: Response) => {
   const reports = await adminService.getAllReports();
   res.json(reports);
-}
+};
 
-async updateReportStatus(req: Request<ParamsDictionary>, res: Response) {
+export const updateReportStatusController = async (req: Request<ParamsDictionary>, res: Response) => {
   const { reportId } = req.params;
   const { status } = req.body;
   await adminService.updateReportStatus(reportId, status);
   res.json({ message: 'Report updated successfully' });
-}
+};
 
-async dashboard(req: Request, res: Response) {
+export const dashboardController = async (req: Request, res: Response) => {
   const result = await adminService.dashboard();
   res.json(result);
-}
-
-
-}
-
-export default new AdminController();
+};
