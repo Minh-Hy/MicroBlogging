@@ -19,6 +19,7 @@ import { createServer } from "http";
 import messagesRouter from './routes/messages.routes';
 import { initSocketIO } from './socket';
 import adminRouter from './routes/admin.routes';
+import notificationRouter from './routes/notification.routes'
 
 // import'~/utils/fake'
 // import '~/utils/deleteFakeData'
@@ -56,6 +57,7 @@ app.use('/static/video', express.static(UPLOAD_VIDEO_DIR))
 app.use('/search', searchRouter)
 app.use('/messages', messagesRouter)
 app.use('/admin', adminRouter);
+app.use('/notifications', notificationRouter)
 
 // Middleware xử lý lỗi phải đặt sau tất cả route
 // ép kiểu rõ ràng để TS hiểu là error middleware

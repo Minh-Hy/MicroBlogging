@@ -10,6 +10,8 @@ import Bookmark from '~/models/schemas/Bookmarks.schemas'
 import Like from '~/models/schemas/Likes.schemas'
 import Messages from '~/models/schemas/Messages.schemas'
 import Reports from '~/models/schemas/Reports.schemas'
+import NotificationModel from '~/models/schemas/Notification.schemas'
+
 
 config()
 
@@ -24,7 +26,8 @@ const COLLECTIONS = {
   BOOKMARKS: process.env.DB_BOOKMARKS_COLLECTION as string,
   LIKES: process.env.DB_LIKES_COLLECTION as string,
   MESSAGES: process.env.DB_MESSAGES_COLLECTION as string,
-  REPORTS: process.env.DB_REPORTS_COLLECTION as string
+  REPORTS: process.env.DB_REPORTS_COLLECTION as string,
+  NOTIFICATIONS : process.env.DB_NOTIFICATIONS_COLLECTION as string
 } as const
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@twitter.ommyd.mongodb.net/?retryWrites=true&w=majority&appName=Twitter`
 // const client = new MongoClient(uri, {
@@ -216,6 +219,10 @@ class DatabaseService {
 
   get reports(): Collection<Reports> {
     return this.db.collection(COLLECTIONS.REPORTS)
+  }
+
+  get notifications(): Collection<NotificationModel> {
+    return this.db.collection(COLLECTIONS.NOTIFICATIONS)
   }
 }
 

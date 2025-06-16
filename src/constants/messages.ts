@@ -85,6 +85,7 @@ PAGE_MUST_BE_GREATER_THAN_0: 'Page must be greater than 0',
 export const BOOKMARK_MESSAGES = {
   BOOKMARK_SUCCESS: 'Bookmark success',
   UNBOOKMARK_SUCCESS: 'Unbookmark success',
+  GET_BOOKMARKS_SUCCESS: 'Get bookmarks success',
 } as const
 
 export const LIKE_MESSAGES = {

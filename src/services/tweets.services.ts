@@ -363,6 +363,57 @@ class TweetsService {
           }
         },
         {
+          $lookup: {
+            from: 'tweets',
+            let: { tweetId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$parent_id', '$$tweetId'] },
+                      { $eq: ['$user_id', user_id_obj] },
+                      { $eq: ['$type', TweetType.Retweet] }
+                    ]
+                  }
+                }
+              }
+            ],
+            as: 'my_retweet'
+          }
+        },
+        {
+          $addFields: {
+            is_retweeted: { $gt: [{ $size: '$my_retweet' }, 0] }
+          }
+        },
+        {
+          $lookup: {
+            from: 'tweets',
+            let: { tweetId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$parent_id', '$$tweetId'] },
+                      { $eq: ['$user_id', user_id_obj] },
+                      { $eq: ['$type', TweetType.QuoteTweet] }
+                    ]
+                  }
+                }
+              }
+            ],
+            as: 'my_quote'
+          }
+        },
+        {
+          $addFields: {
+            is_quoted: { $gt: [{ $size: '$my_quote' }, 0] }
+          }
+        },
+
+        {
           $addFields: {
             is_liked: { $gt: [{ $size: '$my_like' }, 0] }
           }
