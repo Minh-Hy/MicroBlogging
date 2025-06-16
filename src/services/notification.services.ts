@@ -45,6 +45,45 @@ class NotificationService {
       { $set: { is_read: true } }
     );
   }
+
+   // Tạo notification từ Tweet interaction
+  async createTweetInteractionNotify({
+    action_by,
+    target_user_id,
+    tweet_id,
+    type
+  }: {
+    action_by: string;
+    target_user_id: string;
+    tweet_id: string;
+    type: NotificationType;
+  }) {
+    const notification = await this.createNotification({
+      user_id: target_user_id,
+      sender_id: action_by,
+      type,
+      tweet_id
+    });
+
+    return notification;
+  }
+
+  // Tạo notify cho follow
+  async createFollowNotify({
+    action_by,
+    target_user_id
+  }: {
+    action_by: string;
+    target_user_id: string;
+  }) {
+    const notification = await this.createNotification({
+      user_id: target_user_id,
+      sender_id: action_by,
+      type: 'follow'
+    });
+
+    return notification;
+  }
 }
 
 const notificationService = new NotificationService();

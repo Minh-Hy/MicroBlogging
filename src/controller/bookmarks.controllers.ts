@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Request, Response } from "express";
-import { ParamsDictionary } from "express-serve-static-core";
-import { BOOKMARK_MESSAGES } from "~/constants/messages";
-import { BookmarkTweetReqBody } from "~/models/requests/bookmarks.requests";
-import { TokenPayload } from "~/models/requests/user.requests";
-import bookmarksService from "~/services/bookmarks.services";
+import { Request, Response } from 'express';
+import { ParamsDictionary } from 'express-serve-static-core';
+import { BOOKMARK_MESSAGES } from '~/constants/messages';
+import { BookmarkTweetReqBody } from '~/models/requests/bookmarks.requests';
+import { TokenPayload } from '~/models/requests/user.requests';
+import bookmarksService from '~/services/bookmarks.services';
 
 export const bookmarkTweetController = async (
   req: Request<ParamsDictionary, any, BookmarkTweetReqBody>,
@@ -18,10 +18,7 @@ export const bookmarkTweetController = async (
   });
 };
 
-export const unBookmarkTweetController = async (
-  req: Request,
-  res: Response
-) => {
+export const unBookmarkTweetController = async (req: Request, res: Response) => {
   const { user_id } = req.decoded_authorization as TokenPayload;
   const { tweet_id } = req.params;
   const result = await bookmarksService.unBookmarkTweet(user_id, tweet_id);
@@ -31,10 +28,7 @@ export const unBookmarkTweetController = async (
   });
 };
 
-export const getBookmarksController = async (
-  req: Request,
-  res: Response
-) => {
+export const getBookmarksController = async (req: Request, res: Response) => {
   const { user_id } = req.decoded_authorization as TokenPayload;
   const limit = parseInt(req.query.limit as string) || 10;
   const page = parseInt(req.query.page as string) || 1;
