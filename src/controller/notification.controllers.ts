@@ -1,32 +1,30 @@
 import { Request, Response } from 'express';
 import { TokenPayload } from '~/models/requests/user.requests';
-import notificationService from '~/services/notification.services';
+import notificationsService from '~/services/notification.services';
 
-class NotificationsController {
-  async getNotifications(req: Request, res: Response) {
-    const user_id = (req.decoded_authorization as TokenPayload).user_id;
-    const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 20;
+export const getNotificationsController = async (req: Request, res: Response) => {
+  const { user_id } = req.decoded_authorization as TokenPayload;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const page = parseInt(req.query.page as string) || 1;
 
-    const { notifications, total } = await notificationService.getNotifications(user_id, page, limit);
+  const { notifications, total } = await notificationsService.getNotifications(user_id, page, limit);
 
-    res.json({
-      message: 'Get notifications success',
-      result: {
-        notifications,
-        page,
-        limit,
-        total_page: Math.ceil(total / limit)
-      }
-    });
-  }
+  res.json({
+    message: 'Get notifications success',
+    result: {
+      notifications,
+      total,
+      page,
+      limit,
+      total_page: Math.ceil(total / limit)
+    }
+  });
+};
 
-  async markAsRead(req: Request, res: Response) {
-    const { notification_id } = req.params;
-    await notificationService.markAsRead(notification_id);
-    res.json({ message: 'Mark as read success' });
-  }
-}
-
-const notificationsController = new NotificationsController();
-export default notificationsController;
+export const markNotificationAsReadController = async (req: Request, res: Response) => {
+  const { notification_id } = req.params;
+  await notificationsService.markAsRead(notification_id);
+  res.json({
+    message: 'Mark as read success'
+  });
+};

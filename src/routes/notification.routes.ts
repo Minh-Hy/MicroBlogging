@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { accessTokenValidator, verifiedUserValidator } from '~/middlewares/users.middlewares';
-import notificationsController from '~/controller/notification.controllers';
 import { wrapRequestHandler } from '~/utils/handlers';
+import { getNotificationsController, markNotificationAsReadController } from '~/controller/notification.controllers';
 
 const notificationsRouter = Router();
 
@@ -9,14 +9,14 @@ notificationsRouter.get(
   '/',
   accessTokenValidator,
   verifiedUserValidator,
-  wrapRequestHandler(notificationsController.getNotifications)
+  wrapRequestHandler(getNotificationsController)
 );
 
 notificationsRouter.patch(
   '/:notification_id/read',
   accessTokenValidator,
   verifiedUserValidator,
-  wrapRequestHandler(notificationsController.markAsRead)
+  wrapRequestHandler(markNotificationAsReadController)
 );
 
 export default notificationsRouter;

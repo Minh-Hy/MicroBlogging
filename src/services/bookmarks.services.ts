@@ -1,9 +1,10 @@
+import notificationsService  from '~/services/notification.services';
 import { ObjectId } from 'mongodb';
 import databaseService from './database.services';
 import Bookmark from '~/models/schemas/Bookmarks.schemas';
 
 class BookmarksService {
-  async bookmarkTweet(user_id: string, tweet_id: string) {
+    async bookmarkTweet(user_id: string, tweet_id: string) {
     const result = await databaseService.bookmarks.findOneAndUpdate(
       {
         user_id: new ObjectId(user_id),
@@ -20,6 +21,22 @@ class BookmarksService {
         returnDocument: 'after'
       }
     );
+
+    // ✅ Thêm notification sau khi bookmark thành công
+    const tweet = await databaseService.tweets.findOne({
+      _id: new ObjectId(tweet_id)
+    });
+
+    if (tweet && String(tweet.user_id) !== user_id) {
+      await notificationsService.createNotificationAndEmit({
+        user_id: tweet.user_id.toString(),
+        sender_id: user_id,
+        type: 'bookmark',
+        content: 'Your tweet has been bookmarked!',
+        tweet_id: tweet_id
+      });
+    }
+
     return result;
   }
 

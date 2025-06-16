@@ -1,11 +1,12 @@
-import { ObjectId, WithId } from 'mongodb'
+import { FindOneAndUpdateResult } from './../models/types/mongodb.types';
+import { ObjectId} from 'mongodb'
 import databaseService from './database.services'
 import Like from '~/models/schemas/Likes.schemas'
 import notificationsService from './notification.services'
 
 class LikesService {
   async likeTweet(user_id: string, tweet_id: string) {
-    const result: WithId<Like> | null = await databaseService.likes.findOneAndUpdate(
+    const result : FindOneAndUpdateResult<Like> = await databaseService.likes.findOneAndUpdate(
       {
         user_id: new ObjectId(user_id),
         tweet_id: new ObjectId(tweet_id)
@@ -22,24 +23,24 @@ class LikesService {
       }
     )
 
-    // Nếu like lần đầu (tức là vừa được insert mới)
-    if (!result) {
+    // Chỉ tạo notification nếu là like lần đầu (tức insert mới)
+    if (result?.lastErrorObject?.upserted) {
       const tweet = await databaseService.tweets.findOne({
         _id: new ObjectId(tweet_id)
       })
 
       if (tweet && tweet.user_id.toString() !== user_id) {
-        await notificationsService.createNotification({
+        await notificationsService.createNotificationAndEmit({
           user_id: tweet.user_id.toString(),
           sender_id: user_id,
           type: 'like',
-          content: 'đã thích bài viết của bạn',
+          content: 'Someone liked your tweet!',
           tweet_id: tweet_id
         })
       }
     }
 
-    return result
+    return result.value
   }
 
   async unlikeTweet(user_id: string, tweet_id: string) {

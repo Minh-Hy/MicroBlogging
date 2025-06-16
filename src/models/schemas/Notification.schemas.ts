@@ -1,6 +1,5 @@
-import { ObjectId } from "mongodb";
-
-export type NotificationType = "like" | "comment" | "retweet" | "quote" | "follow" | "chat";
+import { ObjectId } from 'mongodb';
+import { NotificationType } from '~/models/other';
 
 interface NotificationTypeSchema {
   _id?: ObjectId;
@@ -28,9 +27,9 @@ export default class Notification {
     this.user_id = payload.user_id;
     this.sender_id = payload.sender_id;
     this.type = payload.type;
-    this.content = payload.content || "";
+    this.content = payload.content || '';
     this.tweet_id = payload.tweet_id;
     this.created_at = payload.created_at || new Date();
-    this.is_read = payload.is_read || false;
+    this.is_read = payload.is_read ?? false;
   }
 }

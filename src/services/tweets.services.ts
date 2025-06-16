@@ -1,9 +1,12 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import notificationsService from '~/services/notification.services'
 import { TweetRequestBody } from '~/models/requests/tweets.requests'
 import databaseService from './database.services'
 import Tweet from '~/models/schemas/Tweet.schemas'
-import { ObjectId, WithId } from 'mongodb'
+import { ObjectId } from 'mongodb'
 import Hashtag from '~/models/schemas/Hashtags.schemas'
 import { TweetType } from '~/constants/enums'
+import { NotificationType } from '~/models/other'
 
 class TweetsService {
   async checkAndCreateHashtags(hashtags: string[]) {
@@ -22,25 +25,74 @@ class TweetsService {
         )
       })
     )
-    return hashtagDocuments.map((hashtag) => (hashtag as WithId<Hashtag>)._id)
+    return hashtagDocuments
+      .map((result) => result.value?._id)
+      .filter((id): id is ObjectId => id !== undefined && id !== null)
   }
   async createTweet(user_id: string, body: TweetRequestBody) {
+      console.log('=== Create Tweet Called ===', body.type, body.parent_id)
     const hashtags = await this.checkAndCreateHashtags(body.hashtags)
-    const result = await databaseService.tweets.insertOne(
-      new Tweet({
-        audience: body.audience,
-        content: body.content,
-        hashtags: hashtags,
-        mentions: body.mentions,
-        medias: body.medias,
-        parent_id: body.parent_id,
-        type: body.type,
-        user_id: new ObjectId(user_id)
-      })
-    )
 
+    const tweetObj = new Tweet({
+      audience: body.audience,
+      content: body.content,
+      hashtags: hashtags,
+      mentions: body.mentions,
+      medias: body.medias,
+      parent_id: body.parent_id,
+      type: body.type,
+      user_id: new ObjectId(user_id)
+    })
+
+    
+    const result = await databaseService.tweets.insertOne(tweetObj)
     const tweet = await databaseService.tweets.findOne({ _id: result.insertedId })
+
+    // ✅ Sau khi tạo tweet, tự động tạo notification nếu cần
+    await this.createInteractionNotification(user_id, body.type, body.parent_id ?? undefined, tweetObj._id)
+
     return tweet
+  }
+
+  private async createInteractionNotification(
+    actorUserId: string,
+    tweetType: TweetType,
+    parentId?: string,
+    newTweetId?: ObjectId
+  ) {
+      console.log('=== Create Interaction Notification Called ===', tweetType, parentId)
+    const notificationType = this.mapTweetTypeToNotificationType(tweetType)
+
+    if (!notificationType || !parentId) return
+
+    const parentTweet = await databaseService.tweets.findOne({ _id: new ObjectId(parentId) })
+    console.log('parentId:', parentId)
+console.log('parentTweet:', parentTweet)
+console.log('actorUserId:', actorUserId)
+console.log('ownerUserId:', parentTweet?.user_id.toString())
+
+    if (parentTweet && parentTweet.user_id.toString() !== actorUserId) {
+      await notificationsService.createNotificationAndEmit({
+        user_id: parentTweet.user_id.toString(),
+        sender_id: actorUserId,
+        type: notificationType,
+        content: '', // (tùy chỉnh message nếu muốn)
+        tweet_id: newTweetId?.toString()
+      })
+    }
+  }
+
+  private mapTweetTypeToNotificationType(tweetType: TweetType): NotificationType | null {
+    switch (tweetType) {
+      case 1:
+        return 'retweet'
+      case 2:
+        return 'comment'
+      case 3:
+        return 'quote'
+      default:
+        return null
+    }
   }
 
   async deleteTweet(user_id: string, tweet_id: string) {
@@ -63,30 +115,14 @@ class TweetsService {
       databaseService.tweets.deleteMany({ parent_id: new ObjectId(tweet_id) }) // xóa children tweet
     ])
   }
-  async increaseView(tweet_id: string, user_id: string | undefined) {
-    const inc = user_id ? { user_views: 1 } : { guest_views: 1 }
+  async increaseView(tweet_id: string, user_id: string | undefined): Promise<Tweet | null> {
     const result = await databaseService.tweets.findOneAndUpdate(
       { _id: new ObjectId(tweet_id) },
-      {
-        $inc: inc,
-        $currentDate: {
-          updated_at: true
-        }
-      },
-      {
-        returnDocument: 'after',
-        projection: {
-          guest_views: 1,
-          user_views: 1,
-          updated_at: 1
-        }
-      }
+      { $inc: { guest_views: 1, user_views: 1 }, $set: { updated_at: new Date() } },
+      { returnDocument: 'after' }
     )
-    return result as WithId<{
-      guest_views: number
-      user_views: number
-      updated_at: Date
-    }>
+
+    return result.value
   }
   async getTweetChildren({
     tweet_id,

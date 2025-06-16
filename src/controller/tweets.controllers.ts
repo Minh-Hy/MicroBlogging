@@ -1,7 +1,7 @@
 
 import { TweetType } from '~/constants/enums';
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Request, Response} from "express"
+import { Request, Response} from "express-serve-static-core"
 import {ParamsDictionary} from 'express-serve-static-core'
 import { Pagination, TweetParam, TweetQuery, TweetRequestBody } from "~/models/requests/tweets.requests"
 import { TokenPayload } from "~/models/requests/user.requests";
@@ -12,6 +12,7 @@ export const createTweetController = async (
   req: Request<ParamsDictionary, any, TweetRequestBody>,
   res: Response
 ) => {
+   console.log('===== Controller Called =====')
   const { user_id } = req.decoded_authorization as TokenPayload
   const result = await tweetsService.createTweet(user_id, req.body);
   res.json({
@@ -42,9 +43,9 @@ export const getTweetController = async (
   const result = await tweetsService.increaseView(req.params.tweet_id, req.decoded_authorization?.user_id);
   const tweet = {
     ...req.tweet,
-    guest_views: result.guest_views,
-    user_views: result.user_views,
-    updated_at: result.updated_at,
+    guest_views: result!.guest_views,
+    user_views: result!.user_views,
+    updated_at: result!.updated_at,
   }
   res.json({
     message : "Get tweet successfully",
