@@ -1,3 +1,4 @@
+import { getBookmarksController } from './../controller/bookmarks.controllers';
 import { Router } from "express"
 import { bookmarkTweetController, unBookmarkTweetController } from "~/controller/bookmarks.controllers"
 import { tweetIdValidator } from "~/middlewares/tweets.middlewares"
@@ -31,6 +32,18 @@ bookmarksRouter.delete('/tweets/:tweet_id',
   accessTokenValidator,
   verifiedUserValidator,
   wrapRequestHandler(unBookmarkTweetController))
+ /* Descript  : Get bookmarks (with pagination)
+ * Path : /bookmarks
+ * Method : GET
+ * Header : {Authorization: Bearer <access token>}
+ * Query : ?limit=20&page=1
+ */
+bookmarksRouter.get(
+  '/',
+  accessTokenValidator,
+  verifiedUserValidator,
+  wrapRequestHandler(getBookmarksController)
+);
 
   export default bookmarksRouter
 
