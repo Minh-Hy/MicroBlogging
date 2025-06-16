@@ -164,7 +164,19 @@ export const getProfileController = async (req : Request<ParamsDictionary, any, 
   })
   return
 }
+export const getUserProfileController = async (req: Request, res: Response) => {
+  const { username } = req.params;
 
+  const user = await usersService.getUserProfile(username);
+  if (!user) {
+    res.status(404).json({ message: USERS_MESSAGES.USER_NOT_FOUND });
+  }
+
+  res.json({
+    message: USERS_MESSAGES.GET_USER_PROFILE_SUCCESS,
+    result: user
+  });
+};
 // export const getProfileController = async (req: Request<GetProfileReqParams>, res: Response, next: NextFunction) {
 //   const {username} = req.params
 //   const user = await usersService.getProfile(username)
@@ -201,6 +213,41 @@ export const unFollowController = async (req : Request<ParamsDictionary, any, Un
   return
 }
 
+export const getFollowersController = async (req: Request, res: Response) => {
+  const { user_id } = req.params;
+  const limit = parseInt(req.query.limit as string) || 20;
+  const page = parseInt(req.query.page as string) || 1;
+
+  const result = await usersService.getFollowers({ user_id, limit, page });
+
+  res.json({
+    message: "Get followers successfully",
+    result: {
+      followers: result.followers,
+      page,
+      limit,
+      total_page: Math.ceil(result.total / limit)
+    }
+  });
+};
+
+export const getFollowingController = async (req: Request, res: Response) => {
+  const { user_id } = req.params;
+  const limit = parseInt(req.query.limit as string) || 20;
+  const page = parseInt(req.query.page as string) || 1;
+
+  const result = await usersService.getFollowing({ user_id, limit, page });
+
+  res.json({
+    message: "Get following successfully",
+    result: {
+      following: result.following,
+      page,
+      limit,
+      total_page: Math.ceil(result.total / limit)
+    }
+  });
+};
 export const changePasswordController = async (req : Request<ParamsDictionary, any, changePasswordReqBody>, res : Response, next: NextFunction) => {
   const {user_id} = req.decoded_authorization as TokenPayload
   const {password} = req.body

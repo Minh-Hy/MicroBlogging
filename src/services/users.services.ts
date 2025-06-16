@@ -495,6 +495,21 @@ class UsersService {
     })
     return user
   }
+  async getUserProfile(username: string) {
+  const user = await databaseService.users.findOne(
+    { username },
+    {
+      projection: {
+        password: 0,
+        email_verify_token: 0,
+        forgot_password_token: 0
+      }
+    }
+  );
+
+  return user;
+}
+
 
   async updateMe(user_id: string, payload: UpdateMeReqBody) {
     const _payload = payload.date_of_birth ? {...payload, date_of_birth: new Date(payload.date_of_birth)} : payload
@@ -565,6 +580,75 @@ class UsersService {
    
   }
 
+  async getFollowers({ user_id, limit, page }: { user_id: string; limit: number; page: number }) {
+    const userObjectId = new ObjectId(user_id);
+    const skip = (page - 1) * limit;
+
+    const followers = await databaseService.followers.aggregate([
+      { $match: { followed_user_id: userObjectId } },
+      {
+        $lookup: {
+          from: "users",
+          localField: "user_id",
+          foreignField: "_id",
+          as: "user"
+        }
+      },
+      { $unwind: "$user" },
+      {
+        $project: {
+          _id: 0,
+          user: {
+            _id: 1,
+            name: 1,
+            username: 1,
+            avatar: 1
+          }
+        }
+      },
+      { $skip: skip },
+      { $limit: limit }
+    ]).toArray();
+
+    const total = await databaseService.followers.countDocuments({ followed_user_id: userObjectId });
+
+    return { followers: followers.map(f => f.user), total };
+  }
+
+  async getFollowing({ user_id, limit, page }: { user_id: string; limit: number; page: number }) {
+    const userObjectId = new ObjectId(user_id);
+    const skip = (page - 1) * limit;
+
+    const following = await databaseService.followers.aggregate([
+      { $match: { user_id: userObjectId } },
+      {
+        $lookup: {
+          from: "users",
+          localField: "followed_user_id",
+          foreignField: "_id",
+          as: "user"
+        }
+      },
+      { $unwind: "$user" },
+      {
+        $project: {
+          _id: 0,
+          user: {
+            _id: 1,
+            name: 1,
+            username: 1,
+            avatar: 1
+          }
+        }
+      },
+      { $skip: skip },
+      { $limit: limit }
+    ]).toArray();
+
+    const total = await databaseService.followers.countDocuments({ user_id: userObjectId });
+
+    return { following: following.map(f => f.user), total };
+  }
   async changePassword(user_id: string, new_password: string) {
     await databaseService.users.updateOne(
       {_id: new ObjectId(user_id)},

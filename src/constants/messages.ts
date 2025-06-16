@@ -62,6 +62,7 @@ export const USERS_MESSAGES = {
   UPLOAD_SUCCESS: 'Upload success',
   REFRESH_TOKEN_SUCCESS: 'Refresh token success',
   GET_VIDEO_STATUS_SUCCESS: 'Get video status success',
+  GET_USER_PROFILE_SUCCESS : 'Get user profile success',
 } as const
 
 export const TWEET_MESSAGES = {
