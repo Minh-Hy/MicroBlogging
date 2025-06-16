@@ -29,7 +29,11 @@ dotenv.config();
 const app = express();
 const httpServer = createServer(app);
 const port = process.env.PORT || 4000;
-app.use(cors())
+app.use(cors({
+  origin: 'http://localhost:3000',   // không được dùng '*'
+  credentials: true                  // cho phép gửi cookie, token, v.v.
+}));
+
 //tao folder uploads
 
 initFolder();
