@@ -315,16 +315,16 @@ export const tweetIdValidator = validate(
           }
         }
       },
-      page: {
-        isNumeric: true,
-        custom: {
-          options: async (value, { req }) => {
-           const num = Number(value)
-           if (num < 1) {
-            throw new Error(TWEET_MESSAGES.PAGE_MUST_BE_GREATER_THAN_0)
-           }
-           return true
-          }
-        }
-      }
+      // page: {
+      //   isNumeric: true,
+      //   custom: {
+      //     options: async (value, { req }) => {
+      //      const num = Number(value)
+      //      if (num < 1) {
+      //       throw new Error(TWEET_MESSAGES.PAGE_MUST_BE_GREATER_THAN_0)
+      //      }
+      //      return true
+      //     }
+      //   }
+      // }
     },['query']))
