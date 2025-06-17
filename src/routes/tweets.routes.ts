@@ -1,5 +1,5 @@
 import { Router } from "express"
-import { createTweetController, getNewFeedsController, getTweetChildrenController, getTweetController, deleteTweetController } from "~/controller/tweets.controllers"
+import { createTweetController, getNewFeedsController, getTweetChildrenController, getTweetController, deleteTweetController, softDeleteTweetByAdminController, updateTweetController } from "~/controller/tweets.controllers"
 import { audienceValidator, createTweetValidator, getTweetChildrenValidator, paginationValidator, tweetIdValidator } from "~/middlewares/tweets.middlewares"
 
 import { accessTokenValidator, isUserLoggedInValidator, verifiedUserValidator } from "~/middlewares/users.middlewares"
@@ -32,6 +32,36 @@ tweetsRouter.delete(
   verifiedUserValidator,
   wrapRequestHandler(deleteTweetController)
 );
+
+/**
+ * Descript  : Update tweet
+ * Path : /:tweet_id
+ * Method : PATCH
+ * Headers : Authorization<Bearer access_token>
+ * Body : TweetRequestBody 
+*/ 
+tweetsRouter.patch(
+  '/:tweet_id',
+  accessTokenValidator,
+  verifiedUserValidator,
+  tweetIdValidator,
+  createTweetValidator, // tái dùng luôn validator cũ vì body giống lúc create
+  wrapRequestHandler(updateTweetController)
+)
+/**
+ * Descript  : Soft delete tweet by admin
+ * Path : /:tweet_id/soft-delete
+ * Method : PATCH
+ * Headers : Authorization<Bearer access_token>
+ * Body : { reason: string }
+ */
+tweetsRouter.patch(
+  '/:tweet_id/soft-delete',
+  accessTokenValidator, 
+  verifiedUserValidator, 
+  tweetIdValidator, 
+  wrapRequestHandler(softDeleteTweetByAdminController)
+)
 
 /**
  * Descript  : get tweet detail 

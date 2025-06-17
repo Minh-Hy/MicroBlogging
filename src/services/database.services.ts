@@ -148,7 +148,7 @@ class DatabaseService {
         
         const indexExists = await collection.indexExists([indexName])
         if (!indexExists) {
-          await collection.createIndex(index.key, index.options)
+          await collection.createIndex(index.key, index.options ?? {})
         }
       }
     }

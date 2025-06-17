@@ -6,17 +6,18 @@ import {ParamsDictionary} from 'express-serve-static-core'
 import { Pagination, TweetParam, TweetQuery, TweetRequestBody } from "~/models/requests/tweets.requests"
 import { TokenPayload } from "~/models/requests/user.requests";
 import tweetsService from "~/services/tweets.services";
+import { TWEET_MESSAGES, USERS_MESSAGES } from '~/constants/messages';
 
 
 export const createTweetController = async (
   req: Request<ParamsDictionary, any, TweetRequestBody>,
   res: Response
 ) => {
-   console.log('===== Controller Called =====')
+
   const { user_id } = req.decoded_authorization as TokenPayload
   const result = await tweetsService.createTweet(user_id, req.body);
   res.json({
-    message : "Tweet created successfully",
+    message : TWEET_MESSAGES.TWEET_CREATED_SUCCESS,
     result
   })
 };
@@ -30,9 +31,40 @@ export const deleteTweetController = async (
 
   await tweetsService.deleteTweet(user_id, tweet_id);
   res.json({
-    message: "Delete tweet successfully",
+    message: TWEET_MESSAGES.DELETE_TWEET_SUCCESS,
   });
 };
+
+export const softDeleteTweetByAdminController = async (req: Request, res: Response) => {
+  const { tweet_id } = req.params as { tweet_id: string }
+  const { reason } = req.body as { reason: string }
+  const { user_id, role } = req.decoded_authorization as TokenPayload
+
+  if (role !== 'admin') {
+     res.status(403).json({ message: TWEET_MESSAGES.FORBIDDEN_ACTION })
+  }
+
+  if (!reason || reason.trim() === '') {
+     res.status(400).json({ message: TWEET_MESSAGES.REASON_REQUIRED })
+  }
+
+  await tweetsService.softDeleteByAdmin(tweet_id, user_id, reason)
+
+   res.json({
+    message: TWEET_MESSAGES.SOFT_DELETE_TWEET_SUCCESS,
+  })
+}
+
+export const updateTweetController = async (req: Request, res: Response) => {
+  const { tweet_id } = req.params as { tweet_id: string }
+  const { user_id } = req.decoded_authorization as TokenPayload
+
+  const updatedTweet = await tweetsService.updateTweet(user_id, tweet_id, req.body)
+  res.json({
+    message: TWEET_MESSAGES.UPDATE_TWEET_SUCCESS,
+    result: updatedTweet
+  })
+}
 
 
 export const getTweetController = async (
@@ -48,7 +80,7 @@ export const getTweetController = async (
     updated_at: result!.updated_at,
   }
   res.json({
-    message : "Get tweet successfully",
+    message : TWEET_MESSAGES.GET_TWEET_SUCCESS,
     result : tweet
   })
 };
@@ -69,7 +101,7 @@ export const getTweetChildrenController = async (
       user_id
     });
   res.json({
-    message : "Get tweet Children successfully",
+    message : USERS_MESSAGES.GET_TWEET_CHILDREN_SUCCESS,
     result : {
       tweets,
       tweet_type,
@@ -91,7 +123,7 @@ export const getNewFeedsController = async (req : Request<ParamsDictionary, any,
     page
   })
   res.json({
-    message: "Get new feeds successfully",
+    message: USERS_MESSAGES.GET_NEW_FEEDS_SUCCESS,
     result : {
       tweet : result.tweets,
       limit,
