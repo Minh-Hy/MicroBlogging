@@ -32,7 +32,9 @@ import {
   refreshTokenController,
   getUserProfileController,
   getFollowersController,
-  getFollowingController
+  getFollowingController,
+  addToTwitterCircleController,
+  removeFromTwitterCircleController
 } from '~/controller/users.controllers'
 import { wrapRequestHandler } from '~/utils/handlers'
 import { filterMiddlewares } from '~/middlewares/common.middlewares'
@@ -225,5 +227,26 @@ usersRouter.post(
   verifiedUserValidator,
   wrapRequestHandler(reportsController.createReport)
 )
+/**
+ * Descript  : Add user to Twitter Circle
+ * Path : /twitter-circle/:user_id    
+ */
+usersRouter.post(
+  '/twitter-circle/:user_id',
+  accessTokenValidator,
+  verifiedUserValidator,
+  wrapRequestHandler(addToTwitterCircleController)
+)
+/**
+ * Descript  : Remove user from Twitter Circle
+ * Path : /twitter-circle/:user_id
+ */
+usersRouter.delete(
+  '/twitter-circle/:user_id',
+  accessTokenValidator,
+  verifiedUserValidator,
+  wrapRequestHandler(removeFromTwitterCircleController)
+)
+
 
 export default usersRouter

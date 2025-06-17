@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import User from "~/models/schemas/User.schema"
 import databaseService from "./database.services"
@@ -219,6 +220,53 @@ class UsersService {
     };
   }
   
+  // Thêm vào class UsersService
+
+async addToTwitterCircle(user_id: string, target_user_id: string) {
+  if (user_id === target_user_id) {
+    throw new ErrorWithStatus({
+      message: 'Cannot add yourself to twitter circle',
+      status: HTTP_STATUS.BAD_REQUEST
+    })
+  }
+
+  const targetUser = await databaseService.users.findOne({ _id: new ObjectId(target_user_id) });
+  if (!targetUser) {
+    throw new ErrorWithStatus({
+      message: USERS_MESSAGES.USER_NOT_FOUND,
+      status: HTTP_STATUS.NOT_FOUND
+    })
+  }
+
+  const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) });
+  if (!user) {
+    throw new ErrorWithStatus({
+      message: USERS_MESSAGES.USER_NOT_FOUND,
+      status: HTTP_STATUS.NOT_FOUND
+    })
+  }
+
+  if (user.twitter_circle?.includes(target_user_id as any)) {
+    return { message: 'User already in twitter circle' }
+  }
+
+  await databaseService.users.updateOne(
+    { _id: new ObjectId(user_id) },
+    { $addToSet: { twitter_circle: new ObjectId(target_user_id) } }
+  )
+
+  return { message: 'Add to twitter circle successfully' }
+}
+
+async removeFromTwitterCircle(user_id: string, target_user_id: string) {
+  await databaseService.users.updateOne(
+    { _id: new ObjectId(user_id) },
+    { $pull: { twitter_circle: new ObjectId(target_user_id) } }
+  )
+  return { message: 'Remove from twitter circle successfully' }
+}
+
+
   async checkEmailExist(email : string) {
     const user = await databaseService.users.findOne({ email })
     return Boolean(user)

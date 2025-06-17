@@ -266,4 +266,21 @@ export const oauthController = async (req : Request, res : Response) => {
  
 }
 
+export const addToTwitterCircleController = async (req: Request, res: Response) => {
+  const { user_id } = req.decoded_authorization as TokenPayload
+  const { user_id: target_user_id } = req.params
+
+  const result = await usersService.addToTwitterCircle(user_id, target_user_id)
+  res.json(result)
+}
+
+export const removeFromTwitterCircleController = async (req: Request, res: Response) => {
+  const { user_id } = req.decoded_authorization as TokenPayload
+  const { user_id: target_user_id } = req.params
+
+  const result = await usersService.removeFromTwitterCircle(user_id, target_user_id)
+  res.json(result)
+}
+
+
 
